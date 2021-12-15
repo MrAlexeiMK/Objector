@@ -1,4 +1,4 @@
-module objector {
+module ru.mralexeimk.objector {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;

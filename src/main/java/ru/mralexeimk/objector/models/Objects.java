@@ -1,4 +1,6 @@
 package ru.mralexeimk.objector.models;
+import com.sun.speech.freetts.Voice;
+import com.sun.speech.freetts.VoiceManager;
 import ru.mralexeimk.objector.models.NeuralNetwork;
 
 import javax.imageio.ImageIO;
@@ -11,10 +13,13 @@ import java.util.List;
 public class Objects {
     private HashMap<String, NeuralNetwork> nn;
     private String category;
+
     private int queue_count;
+    private Result query_res;
 
     public Objects(String category) {
         queue_count = 0;
+        query_res = null;
         this.category = category;
         Set<String> list = getObjectsInDirectory();
         nn = new HashMap<>();
@@ -86,8 +91,8 @@ public class Objects {
     }
 
     public synchronized void train(List<Double> input, String id) {
-        List<Double> output = new ArrayList<>(Arrays.asList(0.01, 0.99));
-        List<Double> output2 = new ArrayList<>(Arrays.asList(0.99, 0.01));
+        List<Double> output = new ArrayList<>(Arrays.asList(0.01));
+        List<Double> output2 = new ArrayList<>(Arrays.asList(0.99));
         if (getNeuralNetworks().containsKey(id)) {
             NeuralNetwork neuralNetwork = getNeuralNetwork(id);
             neuralNetwork.train(input, output2);
@@ -100,7 +105,7 @@ public class Objects {
         }
     }
 
-    public void queueTrain(List<Double> input, String id) {
+    public void threadTrain(List<Double> input, String id) {
         queue_count++;
         Thread th = new Thread(() -> {
             train(input, id);
@@ -137,14 +142,28 @@ public class Objects {
     public Result query(List<Double> input) {
         String res = null;
         double max = 0;
-        for(String name : getNeuralNetworks().keySet()) {
-            List<Double> output = getNeuralNetwork(name).query(input);
-            if(output.get(0) > max) {
-                max = output.get(0);
-                res = name;
+        if(input != null && !input.isEmpty()) {
+            for (String name : getNeuralNetworks().keySet()) {
+                List<Double> output = getNeuralNetwork(name).query(input);
+                if (output.get(0) > max) {
+                    max = output.get(0);
+                    res = name;
+                }
+                //System.out.println(name + ", " + output.get(0));
             }
+            //System.out.println();
         }
         return new Result(res, max);
+    }
+
+    public Result getQueryResult() {
+        return query_res;
+    }
+
+    public void threadQuery(List<Double> input) {
+        new Thread(() -> {
+            query_res = query(input);
+        }).start();
     }
 
     public void trainFromFile(String path) {
@@ -215,16 +234,20 @@ public class Objects {
     }
 
     public List<Double> parseImage(BufferedImage im, int newW, int newH) {
-        List<Double> res = new ArrayList<>();
-        im = resize(im, newW, newH);
-        for(int y = 0; y < im.getHeight(); ++y) {
-            for(int x = 0; x < im.getWidth(); ++x) {
-                int rgb = im.getRGB(x, y);
-                int red = 255 - (rgb >> 16) & 0xFF;
-                res.add(Double.valueOf(red));
+        try {
+            List<Double> res = new ArrayList<>();
+            im = resize(im, newW, newH);
+            for (int y = 0; y < newH; ++y) {
+                for (int x = 0; x < newW; ++x) {
+                    int rgb = im.getRGB(x, y);
+                    int red = 255 - (rgb >> 16) & 0xFF;
+                    res.add(Double.valueOf(red));
+                }
             }
+            return res;
+        } catch (Exception e) {
+            return null;
         }
-        return res;
     }
 
     public List<Double> parseImage(String path) {

@@ -19,7 +19,7 @@
                         <Font name="Segoe UI" size="18.0" fx:id="x1" />
                     </font>
                 </Button>
-            <Slider fx:id="slider" value="15.0" />
+            <Slider fx:id="slider" value="60.0" />
                 <Button fx:id="btnStopCamera" font="$x1" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#stopCamera" prefHeight="50.0" prefWidth="190.0" text="Остановить камеру" />
             <ChoiceBox fx:id="object" onAction="#choiceObject" prefHeight="26.0" prefWidth="69.0" visible="false" />
             </children>

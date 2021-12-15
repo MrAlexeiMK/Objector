@@ -26,6 +26,8 @@ import ru.mralexeimk.objector.other.WebCamState;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -50,9 +52,6 @@ public class WebCamController implements Initializable {
     private ImageView imgWebCamCapturedImage;
     @FXML
     private Label queueLabel, header;
-
-    public static boolean isOpen = false;
-    public WebCamState state = WebCamState.DEFAULT;
 
     public void setState(WebCamState state) {
         this.state = state;
@@ -100,7 +99,10 @@ public class WebCamController implements Initializable {
 
     private BufferedImage grabbedImage;
     private Webcam selWebCam = null;
-    private boolean stopCamera = false;
+    private static boolean stopCamera = false;
+    public static boolean isOpen = false;
+    private static boolean stopTask = false;
+    public WebCamState state = WebCamState.DEFAULT;
     private ObjectProperty<Image> imageProperty = new SimpleObjectProperty<Image>();
 
     private String cameraListPromptText = "Выбрать камеру";
@@ -130,7 +132,6 @@ public class WebCamController implements Initializable {
             }
         });
         Platform.runLater(() -> setImageViewSize());
-
     }
 
     public void choiceObject() {
@@ -142,6 +143,8 @@ public class WebCamController implements Initializable {
         if(state == WebCamState.TRAIN) {
             MainController.objects.saveToFiles();
         }
+        closeCamera();
+        stopTask = true;
         Stage stage = (Stage) btnStartCamera.getScene().getWindow();
         stage.close();
         isOpen = false;
@@ -161,19 +164,16 @@ public class WebCamController implements Initializable {
 
     protected void initializeWebCam(final int webCamIndex) {
 
-        Task<Void> webCamInitializer = new Task<Void>() {
+        Task<Void> webCamInitializer = new Task<>() {
 
             @Override
-            protected Void call() throws Exception {
+            protected Void call() {
 
-                if (selWebCam == null) {
-                    selWebCam = Webcam.getWebcams().get(webCamIndex);
-                    selWebCam.open();
-                } else {
+                if (selWebCam != null) {
                     closeCamera();
-                    selWebCam = Webcam.getWebcams().get(webCamIndex);
-                    selWebCam.open();
                 }
+                selWebCam = Webcam.getWebcams().get(webCamIndex);
+                selWebCam.open();
                 startWebCamStream();
                 return null;
             }
@@ -186,6 +186,7 @@ public class WebCamController implements Initializable {
     }
 
     public void speak(String text) {
+        System.setProperty("freetts.voices", "com.sun.speech.freetts.en.us.cmu_us_kal.KevinVoiceDirectory");
         Thread th = new Thread(() -> {
             Voice voice;
             VoiceManager vm = VoiceManager.getInstance();
@@ -197,47 +198,53 @@ public class WebCamController implements Initializable {
             System.out.println(text);
             try {
                 voice.speak("Hello, " + text);
+                voice.deallocate();
             } catch(Exception e){
                 e.printStackTrace();
             }
         });
-        if(!text.equals("Nothing")) th.start();
+        th.start();
     }
 
     protected void startWebCamStream() {
-
         stopCamera = false;
-        Task<Void> task = new Task<>() {
+        stopTask = false;
+
+        Task<Boolean> task = new Task<>() {
 
             @Override
-            protected Void call() {
+            protected Boolean call() {
                 BufferedImage predImage = null;
-                while (true) {
+                while (!stopTask) {
                     try {
                         if ((grabbedImage = selWebCam.getImage()) != null) {
                             if(!stopCamera) {
                                 BufferedImage finalPredImage = predImage;
+                                grabbedImage = Objects.resize(grabbedImage, 160, 90);
                                 Platform.runLater(() -> {
-                                    if (finalPredImage != null) {
+                                    if (finalPredImage != null && grabbedImage != null) {
                                         if (state == WebCamState.TRAIN) {
                                             grabbedImage = convert(finalPredImage, grabbedImage);
                                             List<Double> input = MainController.objects.parseImage(grabbedImage, 32, 32);
-                                            MainController.objects.queueTrain(input, object.getValue().toString());
+                                            MainController.objects.threadTrain(input, object.getValue().toString());
                                             queueLabel.setText("В очереди: " + MainController.objects.getQueueCount());
-                                        }
-                                        else if(state == WebCamState.QUERY) {
-                                            List<Double> input = MainController.objects.parseImage(convert(finalPredImage,
-                                                    grabbedImage), 32, 32);
-                                            Objects.Result res = MainController.objects.query(input);
-                                            String cur = "";
-                                            if(!header.getText().equals("")) cur = header.getText().split(", ")[0];
-                                            header.setText(res.getId() + ", " + Math.round(res.getProb()*100)/100.0);
-                                            if(!cur.equals(res.getId()) && res.getProb() > 0.9) speak(res.getId());
+                                        } else if (state == WebCamState.QUERY) {
+                                            List<Double> input = MainController.objects.parseImage(convert(finalPredImage, grabbedImage), 32, 32);
+                                            MainController.objects.threadQuery(input);
+                                            Objects.Result res = MainController.objects.getQueryResult();
+                                            if (res != null) {
+                                                String cur = "";
+                                                if (!header.getText().equals("")) cur = header.getText().split(", ")[0];
+                                                header.setText(res.getId() + ", " + Math.round(res.getProb() * 100) / 100.0);
+                                                if (!cur.equals(res.getId()) && res.getProb() > 0.9 && !res.getId().equals("Nothing")) speak(res.getId());
+                                            }
                                         }
                                     }
-                                    Image img = SwingFXUtils
-                                            .toFXImage(grabbedImage, null);
-                                    imageProperty.set(img);
+                                    if(grabbedImage != null) {
+                                        Image img = SwingFXUtils
+                                                .toFXImage(grabbedImage, null);
+                                        imageProperty.set(img);
+                                    }
                                 });
                                 predImage = grabbedImage;
                                 grabbedImage.flush();
@@ -245,6 +252,9 @@ public class WebCamController implements Initializable {
                             else if(state == WebCamState.TRAIN) {
                                 Platform.runLater(() -> {
                                     queueLabel.setText("В очереди: " + MainController.objects.getQueueCount());
+                                    if (MainController.objects.getQueueCount() == 0) {
+                                        MainController.objects.saveToFiles();
+                                    }
                                 });
                             }
                         }
@@ -252,14 +262,21 @@ public class WebCamController implements Initializable {
                         e.printStackTrace();
                     }
                 }
+                return true;
             }
-
         };
+
         Thread th = new Thread(task);
         th.setDaemon(true);
         th.start();
         imgWebCamCapturedImage.imageProperty().bind(imageProperty);
+    }
 
+    public static BufferedImage deepCopy(BufferedImage bi) {
+        ColorModel cm = bi.getColorModel();
+        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+        WritableRaster raster = bi.copyData(null);
+        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
     }
 
     public BufferedImage convert(BufferedImage pred, BufferedImage cur) {

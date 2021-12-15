@@ -158,7 +158,7 @@ public class MainController {
         }
     }
 
-    private static class TimerService extends ScheduledService<Boolean> {
+    static class TimerService extends ScheduledService<Boolean> {
         protected Task<Boolean> createTask() {
             return new Task<>() {
                 protected Boolean call() {
