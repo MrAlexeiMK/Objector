@@ -1,60 +1,74 @@
 package ru.mralexeimk.objector.controllers;
 
-import java.awt.image.BufferedImage;
-import java.net.URL;
-import java.util.ResourceBundle;
-
+import com.github.sarxos.webcam.Webcam;
+import com.sun.speech.freetts.Voice;
+import com.sun.speech.freetts.VoiceManager;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.event.ActionEvent;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
-
-import com.github.sarxos.webcam.Webcam;
 import javafx.stage.Stage;
+import ru.mralexeimk.objector.models.Objects;
 import ru.mralexeimk.objector.other.WebCamState;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
 
 public class WebCamController implements Initializable {
 
     @FXML
-    Button btnStartCamera;
-
+    private Button btnStartCamera;
     @FXML
-    Button btnStopCamera;
-
+    private Button btnStopCamera;
     @FXML
-    Button btnDisposeCamera;
-
+    private ChoiceBox object;
     @FXML
-    ComboBox<WebCamInfo> cbCameraOptions;
-
+    private Slider slider;
     @FXML
-    BorderPane bpWebCamPaneHolder;
-
+    private ComboBox<WebCamInfo> cbCameraOptions;
     @FXML
-    FlowPane fpBottomPane;
-
+    private BorderPane bpWebCamPaneHolder;
     @FXML
-    ImageView imgWebCamCapturedImage;
+    private FlowPane fpBottomPane;
+    @FXML
+    private ImageView imgWebCamCapturedImage;
+    @FXML
+    private Label queueLabel, header;
 
     public static boolean isOpen = false;
     public WebCamState state = WebCamState.DEFAULT;
 
     public void setState(WebCamState state) {
         this.state = state;
+        if(state == WebCamState.TRAIN) {
+            cbCameraOptions.setDisable(true);
+            object.setVisible(true);
+            object.setDisable(false);
+            for (String obj : MainController.objects.getObjects()) {
+                object.getItems().add(obj);
+            }
+        }
+        else {
+            queueLabel.setVisible(false);
+            slider.setVisible(false);
+            header.setText("");
+        }
     }
 
     private class WebCamInfo {
@@ -94,7 +108,8 @@ public class WebCamController implements Initializable {
     @Override
     public void initialize(URL arg0, ResourceBundle arg1) {
         isOpen = true;
-        fpBottomPane.setDisable(true);
+        btnStartCamera.setDisable(true);
+        btnStopCamera.setDisable(true);
         ObservableList<WebCamInfo> options = FXCollections.observableArrayList();
         int webCamCounter = 0;
         for (Webcam webcam : Webcam.getWebcams()) {
@@ -108,7 +123,9 @@ public class WebCamController implements Initializable {
         cbCameraOptions.setPromptText(cameraListPromptText);
         cbCameraOptions.getSelectionModel().selectedItemProperty().addListener((arg01, arg11, arg2) -> {
             if (arg2 != null) {
-                System.out.println("Индекс: " + arg2.getWebCamIndex() + ": Название камеры:" + arg2.getWebCamName());
+                btnStartCamera.setDisable(false);
+                btnStopCamera.setDisable(false);
+                System.out.println("Индекс: " + arg2.getWebCamIndex() + ": Название камеры: " + arg2.getWebCamName());
                 initializeWebCam(arg2.getWebCamIndex());
             }
         });
@@ -116,7 +133,15 @@ public class WebCamController implements Initializable {
 
     }
 
+    public void choiceObject() {
+        String obj = object.getValue().toString();
+        cbCameraOptions.setDisable(false);
+    }
+
     public void close() {
+        if(state == WebCamState.TRAIN) {
+            MainController.objects.saveToFiles();
+        }
         Stage stage = (Stage) btnStartCamera.getScene().getWindow();
         stage.close();
         isOpen = false;
@@ -160,6 +185,25 @@ public class WebCamController implements Initializable {
         btnStartCamera.setDisable(true);
     }
 
+    public void speak(String text) {
+        Thread th = new Thread(() -> {
+            Voice voice;
+            VoiceManager vm = VoiceManager.getInstance();
+            voice = vm.getVoice("kevin16");
+            voice.allocate();
+            voice.setRate(190);
+            voice.setPitch(150);
+            voice.setVolume(3);
+            System.out.println(text);
+            try {
+                voice.speak("Hello, " + text);
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+        });
+        if(!text.equals("Nothing")) th.start();
+    }
+
     protected void startWebCamStream() {
 
         stopCamera = false;
@@ -167,27 +211,47 @@ public class WebCamController implements Initializable {
 
             @Override
             protected Void call() {
-
-                while (!stopCamera) {
+                BufferedImage predImage = null;
+                while (true) {
                     try {
                         if ((grabbedImage = selWebCam.getImage()) != null) {
-
-                            Platform.runLater(() -> {
-                                grabbedImage.setRGB(0, 0, 255);
-                                Image img = SwingFXUtils
-                                        .toFXImage(grabbedImage, null);
-                                imageProperty.set(img);
-                            });
-
-                            grabbedImage.flush();
-
+                            if(!stopCamera) {
+                                BufferedImage finalPredImage = predImage;
+                                Platform.runLater(() -> {
+                                    if (finalPredImage != null) {
+                                        if (state == WebCamState.TRAIN) {
+                                            grabbedImage = convert(finalPredImage, grabbedImage);
+                                            List<Double> input = MainController.objects.parseImage(grabbedImage, 32, 32);
+                                            MainController.objects.queueTrain(input, object.getValue().toString());
+                                            queueLabel.setText("В очереди: " + MainController.objects.getQueueCount());
+                                        }
+                                        else if(state == WebCamState.QUERY) {
+                                            List<Double> input = MainController.objects.parseImage(convert(finalPredImage,
+                                                    grabbedImage), 32, 32);
+                                            Objects.Result res = MainController.objects.query(input);
+                                            String cur = "";
+                                            if(!header.getText().equals("")) cur = header.getText().split(", ")[0];
+                                            header.setText(res.getId() + ", " + Math.round(res.getProb()*100)/100.0);
+                                            if(!cur.equals(res.getId()) && res.getProb() > 0.9) speak(res.getId());
+                                        }
+                                    }
+                                    Image img = SwingFXUtils
+                                            .toFXImage(grabbedImage, null);
+                                    imageProperty.set(img);
+                                });
+                                predImage = grabbedImage;
+                                grabbedImage.flush();
+                            }
+                            else if(state == WebCamState.TRAIN) {
+                                Platform.runLater(() -> {
+                                    queueLabel.setText("В очереди: " + MainController.objects.getQueueCount());
+                                });
+                            }
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-
-                return null;
             }
 
         };
@@ -198,6 +262,28 @@ public class WebCamController implements Initializable {
 
     }
 
+    public BufferedImage convert(BufferedImage pred, BufferedImage cur) {
+        int val = (int) slider.getValue();
+        BufferedImage res = new BufferedImage(pred.getWidth(), pred.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = res.createGraphics();
+        graphics.setPaint ( new Color ( 255, 255, 255 ) );
+        graphics.fillRect ( 0, 0, pred.getWidth(), pred.getHeight() );
+        for(int y = 0; y < res.getHeight(); ++y) {
+            for(int x = 0; x < res.getWidth(); ++x) {
+                int red1 = (pred.getRGB(x, y) >> 16) & 0xFF;
+                int green1 = (pred.getRGB(x, y) >> 8) & 0xFF;
+                int blue1 = (pred.getRGB(x, y)) & 0xFF;
+                int red2 = (cur.getRGB(x, y) >> 16) & 0xFF;
+                int green2 = (cur.getRGB(x, y) >> 8) & 0xFF;
+                int blue2 = (cur.getRGB(x, y)) & 0xFF;
+                if(Math.abs(red1-red2) >= val && Math.abs(green1-green2) >= val && Math.abs(blue1-blue2) >= val) {
+                    res.setRGB(x, y, cur.getRGB(x, y));
+                }
+            }
+        }
+        return res;
+    }
+
     private void closeCamera() {
         if (selWebCam != null) {
             selWebCam.close();
@@ -205,6 +291,9 @@ public class WebCamController implements Initializable {
     }
 
     public void stopCamera(ActionEvent event) {
+        if(state == WebCamState.TRAIN) {
+            MainController.objects.saveToFiles();
+        }
         stopCamera = true;
         btnStartCamera.setDisable(false);
         btnStopCamera.setDisable(true);

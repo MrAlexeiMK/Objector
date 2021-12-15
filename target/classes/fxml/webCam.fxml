@@ -10,12 +10,18 @@
     <bottom>
         <FlowPane fx:id="fpBottomPane" alignment="CENTER" columnHalignment="CENTER" hgap="50.0" prefHeight="80.0" prefWidth="200.0" style="-fx-background-color:#ccc;">
             <children>
+            <Label fx:id="queueLabel" prefHeight="18.0" prefWidth="104.0" text="В очереди:  ">
+               <font>
+                  <Font size="10.0" />
+               </font></Label>
                 <Button fx:id="btnStartCamera" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#startCamera" prefHeight="50.0" prefWidth="190.0" text="Запустить камеру">
                     <font>
                         <Font name="Segoe UI" size="18.0" fx:id="x1" />
                     </font>
                 </Button>
+            <Slider fx:id="slider" value="15.0" />
                 <Button fx:id="btnStopCamera" font="$x1" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#stopCamera" prefHeight="50.0" prefWidth="190.0" text="Остановить камеру" />
+            <ChoiceBox fx:id="object" onAction="#choiceObject" prefHeight="26.0" prefWidth="69.0" visible="false" />
             </children>
         </FlowPane>
     </bottom>
@@ -29,7 +35,7 @@
     <top>
         <GridPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="120.0" style="-fx-background-color:#ccc;&#10;">
             <children>
-                <Label text="Objector" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="0" GridPane.rowSpan="1" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
+                <Label fx:id="header" text="Обучение" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="0" GridPane.rowSpan="1" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
                     <font>
                         <Font name="Segoe UI" size="34.0" />
                     </font>

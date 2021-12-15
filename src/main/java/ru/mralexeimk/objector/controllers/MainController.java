@@ -31,6 +31,8 @@ public class MainController {
     private ChoiceBox category;
     @FXML
     private Button delete;
+    @FXML
+    private Label error;
 
     public static Objects objects;
 
@@ -47,6 +49,7 @@ public class MainController {
     public void tableUpdate() {
         try {
             if (objects.getObjects().size() != list.getItems().size()) {
+                error.setText("");
                 tableInit();
                 delete.setDisable(false);
             }
@@ -84,11 +87,17 @@ public class MainController {
     }
     @FXML
     protected void onClickTrain() {
-        openWebCam(WebCamState.TRAIN);
+        if(!list.getItems().isEmpty()) {
+            openWebCam(WebCamState.TRAIN);
+        }
+        else error.setText("Отсутствуют объекты");
     }
     @FXML
     protected void onClickQuery() {
-        openWebCam(WebCamState.QUERY);
+        if(!list.getItems().isEmpty()) {
+            openWebCam(WebCamState.QUERY);
+        }
+        else error.setText("Отсутствуют объекты");
     }
     @FXML
     protected void onClickOpen() {
@@ -137,6 +146,8 @@ public class MainController {
                 FXMLLoader root = new FXMLLoader(getClass().getResource("/fxml/webCam.fxml"));
                 Stage stage = new Stage();
                 stage.setScene(new Scene(root.load()));
+                stage.setTitle("Обучение объекту");
+                if(state == WebCamState.QUERY) stage.setTitle("Распознавание объекта");
                 WebCamController controller = root.getController();
                 controller.setState(state);
                 stage.setOnHidden(e -> controller.close());

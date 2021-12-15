@@ -9,7 +9,7 @@ public class NeuralNetwork {
     private double lr;
     private List<Integer> layers;
 
-    private final List<Integer> def_layers = new ArrayList<>(Arrays.asList(784, 200, 2));
+    private final List<Integer> def_layers = new ArrayList<>(Arrays.asList(1024, 300, 2));
     private final double def_lr = 0.1;
 
     public NeuralNetwork(int N, List<Integer> layers, List<Matrix> W, double lr) {

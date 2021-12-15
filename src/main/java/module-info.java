@@ -13,6 +13,7 @@ module objector {
     requires java.desktop;
     requires webcam.capture;
     requires javafx.swing;
+    requires freetts;
 
     opens ru.mralexeimk.objector.controllers to javafx.fxml;
     exports ru.mralexeimk.objector;
