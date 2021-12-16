@@ -21,7 +21,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
-import ru.mralexeimk.objector.models.Objects;
+import ru.mralexeimk.objector.singletons.Objects;
 import ru.mralexeimk.objector.other.WebCamState;
 
 import java.awt.*;
@@ -59,13 +59,12 @@ public class WebCamController implements Initializable {
             cbCameraOptions.setDisable(true);
             object.setVisible(true);
             object.setDisable(false);
-            for (String obj : MainController.objects.getObjects()) {
+            for (String obj : Objects.getObjects()) {
                 object.getItems().add(obj);
             }
         }
         else {
             queueLabel.setVisible(false);
-            slider.setVisible(false);
             header.setText("");
         }
     }
@@ -141,7 +140,7 @@ public class WebCamController implements Initializable {
 
     public void close() {
         if(state == WebCamState.TRAIN) {
-            MainController.objects.saveToFiles();
+            Objects.saveToFiles();
         }
         closeCamera();
         stopTask = true;
@@ -225,13 +224,13 @@ public class WebCamController implements Initializable {
                                     if (finalPredImage != null && grabbedImage != null) {
                                         if (state == WebCamState.TRAIN) {
                                             grabbedImage = convert(finalPredImage, grabbedImage);
-                                            List<Double> input = MainController.objects.parseImage(grabbedImage, 32, 32);
-                                            MainController.objects.threadTrain(input, object.getValue().toString());
-                                            queueLabel.setText("В очереди: " + MainController.objects.getQueueCount());
+                                            List<Double> input = Objects.parseImage(grabbedImage, 32, 32);
+                                            Objects.threadTrain(input, object.getValue().toString());
+                                            queueLabel.setText("В очереди: " + Objects.getQueueCount());
                                         } else if (state == WebCamState.QUERY) {
-                                            List<Double> input = MainController.objects.parseImage(convert(finalPredImage, grabbedImage), 32, 32);
-                                            MainController.objects.threadQuery(input);
-                                            Objects.Result res = MainController.objects.getQueryResult();
+                                            List<Double> input = Objects.parseImage(convert(finalPredImage, grabbedImage), 32, 32);
+                                            Objects.threadQuery(input);
+                                            Objects.Result res = Objects.getQueryResult();
                                             if (res != null) {
                                                 String cur = "";
                                                 if (!header.getText().equals("")) cur = header.getText().split(", ")[0];
@@ -251,10 +250,7 @@ public class WebCamController implements Initializable {
                             }
                             else if(state == WebCamState.TRAIN) {
                                 Platform.runLater(() -> {
-                                    queueLabel.setText("В очереди: " + MainController.objects.getQueueCount());
-                                    if (MainController.objects.getQueueCount() == 0) {
-                                        MainController.objects.saveToFiles();
-                                    }
+                                    queueLabel.setText("В очереди: " + Objects.getQueueCount());
                                 });
                             }
                         }
@@ -308,9 +304,6 @@ public class WebCamController implements Initializable {
     }
 
     public void stopCamera(ActionEvent event) {
-        if(state == WebCamState.TRAIN) {
-            MainController.objects.saveToFiles();
-        }
         stopCamera = true;
         btnStartCamera.setDisable(false);
         btnStopCamera.setDisable(true);

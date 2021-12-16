@@ -3,16 +3,26 @@ package ru.mralexeimk.objector.models;
 import java.io.*;
 import java.util.*;
 
-public class NeuralNetwork {
+public class NeuralNetwork implements Serializable {
     private int N;
     private List<Matrix> W;
     private double lr;
-    private List<Integer> layers;
+    private List<Object> layers;
 
-    private final List<Integer> def_layers = new ArrayList<>(Arrays.asList(1024, 300, 1));
+    private final List<Object> def_layers = new ArrayList<>(Arrays.asList(1024, 150, 1));
+    private final List<Object> def_layers_conv = new ArrayList<>(Arrays.asList(
+            1024,
+            Collections.nCopies(6, 784),
+            Collections.nCopies(6, 196),
+            Collections.nCopies(16, 100),
+            Collections.nCopies(16, 25),
+            120,
+            84,
+            1
+            ));
     private final double def_lr = 0.1;
 
-    public NeuralNetwork(int N, List<Integer> layers, List<Matrix> W, double lr) {
+    public NeuralNetwork(int N, List<Object> layers, List<Matrix> W, double lr) {
         load(N, layers, W, lr);
     }
 
@@ -20,7 +30,7 @@ public class NeuralNetwork {
         loadWeights(category, id);
     }
 
-    public void load(int N, List<Integer> layers, List<Matrix> W, double lr) {
+    public void load(int N, List<Object> layers, List<Matrix> W, double lr) {
         this.W = W;
         this.lr = lr;
         this.layers = layers;
@@ -35,7 +45,7 @@ public class NeuralNetwork {
         return N;
     }
 
-    public List<Integer> getLayers() {
+    public List<Object> getLayers() {
         return layers;
     }
 
@@ -182,7 +192,7 @@ public class NeuralNetwork {
         }
     }
 
-    public void saveWeights(String category, String id) {
+    public synchronized void saveWeights(String category, String id) {
         File file = new File("weights/"+category+"/"+id+".w");
         file.getParentFile().getParentFile().mkdirs();
         file.getParentFile().mkdirs();
@@ -192,7 +202,9 @@ public class NeuralNetwork {
 
         try (FileOutputStream f = new FileOutputStream(file.getPath()); ObjectOutputStream o = new ObjectOutputStream(f)) {
             o.writeObject(new NeuralNetwork(N, layers, W, lr));
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void loadWeights(String category, String id) {
@@ -201,6 +213,7 @@ public class NeuralNetwork {
             NeuralNetwork nn = (NeuralNetwork) oi.readObject();
             load(nn.getN(), nn.getLayers(), nn.getWeights(), nn.getLearningRate());
         } catch (Exception e) {
+            //e.printStackTrace();
             toDefault();
             saveWeights(category, id);
         }
@@ -274,17 +287,17 @@ public class NeuralNetwork {
         lr = def_lr;
         N = 2;
         for(int i = 0; i < N; ++i) {
-            W.add(new Matrix(layers.get(i), layers.get(i+1),
-                    -1/Math.sqrt(layers.get(i+1)), 1/Math.sqrt(layers.get(i+1))));
+            W.add(new Matrix((int)layers.get(i), (int)layers.get(i+1),
+                    -1/Math.sqrt((int)layers.get(i+1)), 1/Math.sqrt((int)layers.get(i+1))));
         }
     }
 
     public int getInputNeurons() {
-        return layers.get(0);
+        return (int) layers.get(0);
     }
 
     public int getOutputNeurons() {
-        return layers.get(layers.size()-1);
+        return (int) layers.get(layers.size()-1);
     }
 
     public void print() {

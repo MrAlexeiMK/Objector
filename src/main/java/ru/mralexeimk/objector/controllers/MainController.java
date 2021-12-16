@@ -11,12 +11,14 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import ru.mralexeimk.objector.models.NeuralNetwork;
-import ru.mralexeimk.objector.models.Objects;
+import ru.mralexeimk.objector.singletons.Objects;
 import ru.mralexeimk.objector.other.TableObject;
 import ru.mralexeimk.objector.other.WebCamState;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MainController {
     @FXML
@@ -30,37 +32,47 @@ public class MainController {
     @FXML
     private ChoiceBox category;
     @FXML
-    private Button delete;
+    private Button delete, add;
     @FXML
     private Label error;
-
-    public static Objects objects;
 
     public void tableInit() {
         list.getItems().clear();
         String key = category.getValue().toString();
-        objects = new Objects(key);
-        for(String obj : objects.getObjects()) {
-            NeuralNetwork nn = objects.getNeuralNetwork(obj);
+        Objects.init(key);
+        for(String obj : Objects.getObjects()) {
+            NeuralNetwork nn = Objects.getNeuralNetwork(obj);
             list.getItems().add(new TableObject(obj, nn.getLayers(), nn.getLearningRate()));
         }
     }
 
     public void tableUpdate() {
         try {
-            if (objects.getObjects().size() != list.getItems().size()) {
+            Set<String> list_objects = new HashSet<>();
+            for(TableObject to : list.getItems()) {
+                list_objects.add(to.getId());
+            }
+            if (!Objects.getObjects().containsAll(list_objects) || !list_objects.containsAll(Objects.getObjects())) {
                 error.setText("");
-                tableInit();
                 delete.setDisable(false);
+                add.setDisable(false);
+
+                for(String obj : Objects.getObjects()) {
+                    if(!list_objects.contains(obj)) {
+                        NeuralNetwork nn = Objects.getNeuralNetwork(obj);
+                        list.getItems().add(new TableObject(obj, nn.getLayers(), nn.getLearningRate()));
+                    }
+                }
+                list.getItems().removeIf(to -> !Objects.getObjects().contains(to.getId()));
             }
         } catch (Exception e) {}
     }
 
     @FXML
     public void initialize() {
-        listId.setCellValueFactory(new PropertyValueFactory<TableObject, String>("id"));
-        listLayers.setCellValueFactory(new PropertyValueFactory<TableObject, List<Integer>>("layers"));
-        listLr.setCellValueFactory(new PropertyValueFactory<TableObject, Double>("lr"));
+        listId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        listLayers.setCellValueFactory(new PropertyValueFactory<>("layers"));
+        listLr.setCellValueFactory(new PropertyValueFactory<>("lr"));
         File file = new File("weights/");
         file.mkdirs();
         File file2 = new File("weights/default/");
@@ -97,7 +109,7 @@ public class MainController {
         if(!list.getItems().isEmpty()) {
             openWebCam(WebCamState.QUERY);
         }
-        else error.setText("Отсутствуют объекты");
+        else error.setText("Нет объектов");
     }
     @FXML
     protected void onClickOpen() {
@@ -114,7 +126,7 @@ public class MainController {
         if(list.getSelectionModel() != null) {
             TableObject to = list.getSelectionModel().getSelectedItem();
             if (to != null) {
-                objects.deleteObject(to.getId());
+                Objects.deleteObject(to.getId());
                 delete.setDisable(true);
             }
         }

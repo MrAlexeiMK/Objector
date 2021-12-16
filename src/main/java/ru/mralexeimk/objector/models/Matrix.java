@@ -1,8 +1,9 @@
 package ru.mralexeimk.objector.models;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class Matrix {
+public class Matrix implements Serializable {
     private List<List<Double>> data;
     private int N, M;
 
