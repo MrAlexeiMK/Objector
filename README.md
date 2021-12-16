@@ -1,5 +1,5 @@
 # Objector
- JavaFX application to train/query neural network of moving objects from webcam gui  
+ JavaFX application to train/query neural network of moving objects from webcam gui (in process)  
  
  <b>Installation:</b> Just download Objector.jar  
  
