@@ -11,6 +11,7 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="Objector" target="16" />
+      <module name="SaturnXClans" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

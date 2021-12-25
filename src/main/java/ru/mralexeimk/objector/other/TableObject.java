@@ -4,10 +4,10 @@ import java.util.List;
 
 public class TableObject {
     private String id;
-    private List<Object> layers;
+    private List<Integer> layers;
     private double lr;
 
-    public TableObject(String id, List<Object> layers, double lr) {
+    public TableObject(String id, List<Integer> layers, double lr) {
         this.id = id;
         this.layers = layers;
         this.lr = lr;
@@ -21,11 +21,11 @@ public class TableObject {
         this.id = id;
     }
 
-    public List<Object> getLayers() {
+    public List<Integer> getLayers() {
         return layers;
     }
 
-    public void setLayers(List<Object> layers) {
+    public void setLayers(List<Integer> layers) {
         this.layers = layers;
     }
 

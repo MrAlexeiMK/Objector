@@ -14,6 +14,7 @@ module ru.mralexeimk.objector {
     requires webcam.capture;
     requires javafx.swing;
     requires freetts;
+    requires lombok;
 
     opens ru.mralexeimk.objector.controllers to javafx.fxml;
     exports ru.mralexeimk.objector;

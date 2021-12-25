@@ -59,6 +59,16 @@ public class Matrix implements Serializable {
         }
     }
 
+    public List<Double> toList() {
+        List<Double> res = new ArrayList<>();
+        for(int y = 0; y < getM(); ++y) {
+            for(int x = 0; x < getN(); ++x) {
+                res.add(get(x, y));
+            }
+        }
+        return res;
+    }
+
     public void assign(Matrix m) {
         this.N = m.getN();
         this.M = m.getM();
@@ -176,6 +186,54 @@ public class Matrix implements Serializable {
             }
             assign(res);
         }
+    }
+
+    public void convertByKernel(Matrix K) {
+        if(K.getN() <= getN() && K.getM() <= getM()) {
+            Matrix res = new Matrix(getN() - K.getN() + 1, getM() - K.getM() + 1);
+            for(int y = 0; y < res.getM(); ++y) {
+                for(int x = 0; x < res.getN(); ++x) {
+                    double val = 0;
+                    for(int x1 = x; x1 < x+K.getN(); ++x1) {
+                        for(int y1 = y; y1 < y + K.getM(); ++y1) {
+                            val += get(x1, y1)*K.get(x1-x, y1-y);
+                        }
+                    }
+                    res.set(x, y, val);
+                }
+            }
+            assign(res);
+        }
+    }
+
+    public void resize(int K) {
+        if(K <= getN() && K <= getM()) {
+            Matrix res = new Matrix(getN()/K, getM()/K);
+            for(int y = 0; y < res.getM(); ++y) {
+                for(int x = 0; x < res.getN(); ++x) {
+                    double val = 0;
+                    for(int x1 = K*x; x1 < K*x+K; x1++) {
+                        for(int y1 = K*y; y1 < K*y+K; y1++) {
+                            val += get(x1, y1);
+                        }
+                    }
+                    val /= (K*K);
+                    res.set(x, y, val);
+                }
+            }
+            assign(res);
+        }
+    }
+
+    public double getAverage() {
+        double res = 0;
+        for(int y = 0; y < getM(); ++y) {
+            for(int x = 0; x < getN(); ++x) {
+                res += get(x, y);
+            }
+        }
+        res /= getN()*getM();
+        return res;
     }
 
     public Matrix getTranspose() {
