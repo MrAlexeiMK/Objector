@@ -358,7 +358,7 @@ public class Matrix implements Serializable {
         System.out.println("("+N+";"+M+"):");
         for(int y = 0; y < M; ++y) {
             for(int x = 0; x < N; ++x) {
-                System.out.print(Math.round(get(x, y)*100.0)/100.0+"|");
+                System.out.print(Math.round(get(x, y)*10.0)/10.0+"|");
             }
             System.out.println();
         }

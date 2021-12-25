@@ -10,7 +10,7 @@
       <TableView fx:id="list" layoutX="14.0" layoutY="389.0" prefHeight="231.0" prefWidth="574.0">
         <columns>
           <TableColumn fx:id="listId" editable="false" prefWidth="75.0" text="Объект" />
-            <TableColumn fx:id="listLayers" editable="false" prefWidth="75.0" text="Слои нейросети" />
+            <TableColumn fx:id="listConfiguration" editable="false" prefWidth="75.0" text="Конфигурация" />
             <TableColumn fx:id="listLr" editable="false" prefWidth="75.0" text="Коэффициент обучения" />
         </columns>
          <columnResizePolicy>

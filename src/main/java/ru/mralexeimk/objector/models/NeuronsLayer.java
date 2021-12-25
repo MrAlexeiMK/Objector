@@ -4,6 +4,7 @@ import ru.mralexeimk.objector.other.LayerType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class NeuronsLayer extends Layer implements Serializable {
@@ -12,7 +13,7 @@ public class NeuronsLayer extends Layer implements Serializable {
 
     public NeuronsLayer(int units, int size, LayerType layerType) {
         super(units, size, layerType);
-        data = new ArrayList<>();
+        data = new ArrayList<>(Collections.nCopies(units, 0.5));
         W = new Matrix(1, 1);
     }
 

@@ -40,7 +40,7 @@ public abstract class Layer implements Serializable {
     }
 
     public List<Double> evaluateByDefault(Matrix data, Matrix W) {
-        Matrix outputs = new Matrix(data);
+        Matrix outputs = new Matrix(data.toList());
         outputs = activationFun(W.multiply(outputs));
         List<Double> res = new ArrayList<>();
         for(int y = 0; y < outputs.getM(); ++y) {
@@ -77,6 +77,10 @@ public abstract class Layer implements Serializable {
             res.add(B);
         }
         return res;
+    }
+
+    public String toString() {
+        return getUnits()+"@"+getSize()+"x"+getSize() +", "+getLayerType().toString();
     }
 
     public void toDefault() {};

@@ -13,7 +13,7 @@ public class InputLayer extends Layer implements Serializable {
 
     public InputLayer(int units, int size, LayerType layerType) {
         super(units, size, layerType);
-        data = new Matrix(units, units);
+        data = new Matrix(size, size);
         W = new ArrayList<>();
     }
 
@@ -31,12 +31,12 @@ public class InputLayer extends Layer implements Serializable {
 
     public void setData(List<Double> data) {
         int i = 0;
-        for(int x = 0; x < getSize(); ++x) {
-            for(int y = 0; y < getSize(); ++y) {
+        for(int y = 0; y < getSize(); ++y) {
+            for(int x = 0; x < getSize(); ++x) {
                 try {
                     this.data.set(x, y, data.get(i));
                     ++i;
-                } catch (ArrayIndexOutOfBoundsException ex) {
+                } catch (IndexOutOfBoundsException ex) {
                     System.out.println("Input image size error");
                 }
             }
@@ -59,11 +59,11 @@ public class InputLayer extends Layer implements Serializable {
         if(next instanceof FilterLayer) {
             int kernel = getSize()-next.getSize()+1;
             for(int i = 0; i < getNextLayer().getUnits(); ++i) {
-                W.add(new Matrix(kernel, kernel, 0.01, 10));
+                W.add(new Matrix(kernel, kernel, -0.99, 0.99));
             }
         }
         else if(next instanceof NeuronsLayer) {
-            W.add(new Matrix(getUnits()*getUnits(), getNextLayer().getUnits(),
+            W.add(new Matrix(getSize()*getSize(), getNextLayer().getUnits(),
                     -1/Math.sqrt(getNextLayer().getUnits()), 1/Math.sqrt(getNextLayer().getUnits())));
         }
     }

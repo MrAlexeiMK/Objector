@@ -10,10 +10,7 @@
     <bottom>
         <FlowPane fx:id="fpBottomPane" alignment="CENTER" columnHalignment="CENTER" hgap="50.0" prefHeight="80.0" prefWidth="200.0" style="-fx-background-color:#ccc;">
             <children>
-            <Label fx:id="queueLabel" prefHeight="18.0" prefWidth="104.0" text="В очереди:  ">
-               <font>
-                  <Font size="10.0" />
-               </font></Label>
+            <Label fx:id="queueLabel" prefHeight="18.0" prefWidth="104.0" text="Обучается:  " />
                 <Button fx:id="btnStartCamera" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#startCamera" prefHeight="50.0" prefWidth="190.0" text="Запустить камеру">
                     <font>
                         <Font name="Segoe UI" size="18.0" fx:id="x1" />

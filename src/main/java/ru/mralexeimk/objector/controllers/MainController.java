@@ -26,7 +26,7 @@ public class MainController {
     @FXML
     private TableColumn<TableObject, String> listId;
     @FXML
-    private TableColumn<TableObject, List<Integer>> listLayers;
+    private TableColumn<TableObject, String> listConfiguration;
     @FXML
     private TableColumn<TableObject, Double> listLr;
     @FXML
@@ -42,7 +42,7 @@ public class MainController {
         Objects.init(key);
         for(String obj : Objects.getObjects()) {
             NeuralNetwork nn = Objects.getNeuralNetwork(obj);
-            list.getItems().add(new TableObject(obj, nn.getLayers(), nn.getLearningRate()));
+            list.getItems().add(new TableObject(obj, nn.getConfiguration(), nn.getLearningRate()));
         }
     }
 
@@ -60,7 +60,7 @@ public class MainController {
                 for(String obj : Objects.getObjects()) {
                     if(!list_objects.contains(obj)) {
                         NeuralNetwork nn = Objects.getNeuralNetwork(obj);
-                        list.getItems().add(new TableObject(obj, nn.getLayers(), nn.getLearningRate()));
+                        list.getItems().add(new TableObject(obj, nn.getConfiguration(), nn.getLearningRate()));
                     }
                 }
                 list.getItems().removeIf(to -> !Objects.getObjects().contains(to.getId()));
@@ -71,7 +71,7 @@ public class MainController {
     @FXML
     public void initialize() {
         listId.setCellValueFactory(new PropertyValueFactory<>("id"));
-        listLayers.setCellValueFactory(new PropertyValueFactory<>("layers"));
+        listConfiguration.setCellValueFactory(new PropertyValueFactory<>("configuration"));
         listLr.setCellValueFactory(new PropertyValueFactory<>("lr"));
         File file = new File("weights/");
         file.mkdirs();

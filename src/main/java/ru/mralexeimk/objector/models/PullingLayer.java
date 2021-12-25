@@ -58,7 +58,7 @@ public class PullingLayer extends Layer implements Serializable {
             for(int i = 0; i < getUnits(); ++i) {
                 List<Matrix> res = new ArrayList<>();
                 for (int j = 0; j < val; ++j) {
-                    res.add(new Matrix(kernel, kernel, 0.01, 10));
+                    res.add(new Matrix(kernel, kernel, -0.99, 0.99));
                 }
                 W.add(res);
             }
@@ -70,18 +70,22 @@ public class PullingLayer extends Layer implements Serializable {
         Layer next = getNextLayer();
         if(next instanceof NeuronsLayer nl) {
             if(getUnits() == next.getUnits()) {
+                List<Double> res = new ArrayList<>();
                 for(Matrix m : getData()) {
-                    nl.getData().add(m.getAverage());
+                    res.add(m.getAverage());
                 }
+                nl.setData(res);
             }
             else {
                 throw new IndexOutOfBoundsException("Pulling layer and NeuronsLayer has different units");
             }
         }
         else if(next instanceof FilterLayer fl) {
+            List<Matrix> res = new ArrayList<>();
             for(int i = 0; i < getUnits(); ++i) {
-                fl.getData().addAll(evaluateByKernel(data.get(i), W.get(i)));
+                res.addAll(evaluateByKernel(data.get(i), W.get(i)));
             }
+            fl.setData(res);
         }
     }
 }

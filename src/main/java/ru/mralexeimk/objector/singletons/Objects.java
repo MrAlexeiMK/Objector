@@ -242,7 +242,7 @@ public class Objects {
                 for (int x = 0; x < newW; ++x) {
                     int rgb = im.getRGB(x, y);
                     int red = 255 - (rgb >> 16) & 0xFF;
-                    res.add(Double.valueOf(red));
+                    res.add((double) red);
                 }
             }
             return res;
