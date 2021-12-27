@@ -1,5 +1,7 @@
 package ru.mralexeimk.objector.models;
 
+import ru.mralexeimk.objector.other.Pair;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -206,7 +208,7 @@ public class Matrix implements Serializable {
         }
     }
 
-    public void resize(int K) {
+    public void resize(int K) { //divide by K
         if(K <= getN() && K <= getM()) {
             Matrix res = new Matrix(getN()/K, getM()/K);
             for(int y = 0; y < res.getM(); ++y) {
@@ -214,15 +216,51 @@ public class Matrix implements Serializable {
                     double val = 0;
                     for(int x1 = K*x; x1 < K*x+K; x1++) {
                         for(int y1 = K*y; y1 < K*y+K; y1++) {
-                            val += get(x1, y1);
+                            val = Math.max(val, get(x1, y1));
                         }
                     }
-                    val /= (K*K);
                     res.set(x, y, val);
                 }
             }
             assign(res);
         }
+    }
+
+    public List<Double> getSquareValues(int K, int index) {
+        List<Double> res = new ArrayList<>();
+        for(Pair<Integer, Integer> pair : getSquare(K, index)) {
+            res.add(get(pair.getFirst(), pair.getSecond()));
+        }
+        return res;
+    }
+
+    public List<Pair<Integer, Integer>> getSquare(int K, int index) {
+        List<Pair<Integer, Integer>> coords = new ArrayList<>();
+        if(N%K == 0 && M%K == 0) {
+            int nextN = N/K;
+            int x = (index%nextN) * K;
+            int y = (index/nextN) * K;
+            for(int x1 = x; x1 < x + K; ++x1) {
+                for(int y1 = y; y1 < y + K; ++y1) {
+                    coords.add(new Pair<>(x1, y1));
+                }
+            }
+        }
+        else throw new IndexOutOfBoundsException("N%K != 0 or M%K != 0");
+        return coords;
+    }
+
+    public void sumIntoSquare(int K, int index, double error) {
+        if(N%K == 0 && M%K == 0) {
+            int x = (index%N) * K;
+            int y = (index/N) * K;
+            for(int x1 = x; x1 < x + K; ++x1) {
+                for(int y1 = y; y1 < y + K; ++y1) {
+                    set(x1, y1, get(x1, y1) + error);
+                }
+            }
+        }
+        else throw new IndexOutOfBoundsException("N%K != 0 or M%K != 0");
     }
 
     public double getAverage() {
@@ -358,7 +396,7 @@ public class Matrix implements Serializable {
         System.out.println("("+N+";"+M+"):");
         for(int y = 0; y < M; ++y) {
             for(int x = 0; x < N; ++x) {
-                System.out.print(Math.round(get(x, y)*10.0)/10.0+"|");
+                System.out.print(Math.round(get(x, y)*100.0)/100.0+"|");
             }
             System.out.println();
         }

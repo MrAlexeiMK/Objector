@@ -21,15 +21,27 @@ public abstract class Layer implements Serializable {
         nextLayer = null;
     }
 
-    public double activationFun(double x) {
+    public double activationFunSig(double x) {
         return 1.0/(1 + Math.exp(-x));
+    }
+
+    public double activationFunSoftPlus(double x) {
+        return Math.min(Math.log(1 + Math.exp(x)), 0.99);
+    }
+
+    public double activationFunReLU(double x) {
+        return Math.max(0.01, x);
+    }
+
+    public double activationFunTanh(double x) {
+        return (Math.exp(x) - Math.exp(-x))/(Math.exp(x) + Math.exp(-x));
     }
 
     public Matrix activationFun(Matrix m) {
         Matrix res = new Matrix(m.getN(), m.getM());
         for(int x = 0; x < m.getN(); ++x) {
             for(int y = 0; y < m.getM(); ++y) {
-                res.set(x, y, activationFun(m.get(x, y)));
+                res.set(x, y, activationFunSig(m.get(x, y)));
             }
         }
         return res;
@@ -57,7 +69,7 @@ public abstract class Layer implements Serializable {
             Matrix K = kernels.get(i);
             Matrix B = new Matrix(A);
             B.convertByKernel(K);
-            B = new Matrix(activationFun(B));
+            B = activationFun(B);
             res.add(B);
         }
         return res;

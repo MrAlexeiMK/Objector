@@ -130,7 +130,7 @@ public class WebCamController implements Initializable {
                 initializeWebCam(arg2.getWebCamIndex());
             }
         });
-        Platform.runLater(() -> setImageViewSize());
+        Platform.runLater(this::setImageViewSize);
     }
 
     public void choiceObject() {
@@ -224,11 +224,11 @@ public class WebCamController implements Initializable {
                                     if (finalPredImage != null && grabbedImage != null) {
                                         if (state == WebCamState.TRAIN) {
                                             grabbedImage = convert(finalPredImage, grabbedImage);
-                                            List<Double> input = Objects.parseImage(grabbedImage, 32, 32);
+                                            List<Double> input = Objects.parseImage(grabbedImage, 28, 28);
                                             Objects.threadTrain(input, object.getValue().toString());
                                             queueLabel.setText("В очереди: " + Objects.getQueueCount());
                                         } else if (state == WebCamState.QUERY) {
-                                            List<Double> input = Objects.parseImage(convert(finalPredImage, grabbedImage), 32, 32);
+                                            List<Double> input = Objects.parseImage(convert(finalPredImage, grabbedImage), 28, 28);
                                             Objects.threadQuery(input);
                                             Objects.Result res = Objects.getQueryResult();
                                             if (res != null) {
@@ -255,7 +255,7 @@ public class WebCamController implements Initializable {
                             }
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        //e.printStackTrace();
                     }
                 }
                 return true;

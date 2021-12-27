@@ -43,23 +43,15 @@ public class InputLayer extends Layer implements Serializable {
         }
     }
 
-    public List<Double> toList() {
-        List<Double> res = new ArrayList<>();
-        for(int x = 0; x < getSize(); ++x) {
-            for(int y = 0; y < getSize(); ++y) {
-                res.add(data.get(x, y));
-            }
-        }
-        return res;
-    }
-
     @Override
     public void toDefault() {
+        W.clear();
         Layer next = getNextLayer();
         if(next instanceof FilterLayer) {
             int kernel = getSize()-next.getSize()+1;
             for(int i = 0; i < getNextLayer().getUnits(); ++i) {
-                W.add(new Matrix(kernel, kernel, -0.99, 0.99));
+                W.add(new Matrix(kernel, kernel, -1/Math.sqrt(next.getSize()*next.getSize()),
+                        1/Math.sqrt(next.getSize()*next.getSize())));
             }
         }
         else if(next instanceof NeuronsLayer) {

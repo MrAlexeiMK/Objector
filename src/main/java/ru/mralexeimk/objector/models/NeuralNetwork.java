@@ -2,6 +2,7 @@ package ru.mralexeimk.objector.models;
 
 import lombok.Data;
 import ru.mralexeimk.objector.other.LayerType;
+import ru.mralexeimk.objector.other.Pair;
 
 import java.io.*;
 import java.util.*;
@@ -12,13 +13,12 @@ public class NeuralNetwork implements Serializable {
     private List<Layer> layers;
 
     private final List<Layer> defaultLayers = new ArrayList<>(Arrays.asList(
-            new InputLayer(1, 32, LayerType.INPUT),
-            new FilterLayer(8, 28, LayerType.FILTER),
-            new PullingLayer(8, 14, LayerType.PULLING),
-            new FilterLayer(128, 10, LayerType.FILTER),
-            new PullingLayer(128, 5, LayerType.PULLING),
+            new InputLayer(1, 28, LayerType.INPUT),
+            new FilterLayer(8, 24, LayerType.FILTER),
+            new PullingLayer(8, 8, LayerType.PULLING),
+            new FilterLayer(32, 4, LayerType.FILTER),
+            new PullingLayer(32, 2, LayerType.PULLING),
             new NeuronsLayer(128, 1, LayerType.NEURONS),
-            new NeuronsLayer(80, 1, LayerType.NEURONS),
             new OutputLayer(1, 1, LayerType.OUTPUT)
     ));
     private final double defaultLr = 0.1;
@@ -46,7 +46,6 @@ public class NeuralNetwork implements Serializable {
     public void load(List<Layer> layers, double lr) {
         this.layers = layers;
         this.lr = lr;
-        init();
     }
 
     public void init() {
@@ -138,7 +137,7 @@ public class NeuralNetwork implements Serializable {
         Matrix outputs = new Matrix(getOutputLayer().getData());
         Matrix targets = new Matrix(target_list);
         Matrix errors = targets.minus(outputs);
-        for(int i = getLayers().size()-2; i >= 0; --i) {
+        for(int i = layers.size()-2; i >= 0; --i) {
             Layer layer = getLayers().get(i);
             Layer nextLayer = layer.getNextLayer();
             if(layer instanceof NeuronsLayer nl) {
@@ -164,24 +163,29 @@ public class NeuralNetwork implements Serializable {
                 if(nextLayer instanceof FilterLayer fl) {
                     int connections = fl.getUnits()/pl.getUnits();
                     List<Double> new_errors = new ArrayList<>();
+                    int lenErrorsPerConnect = errors.getM()/(pl.getUnits()*connections);
                     for(int unit = 0; unit < pl.getUnits(); ++unit) {
-                        Matrix I = new Matrix(pl.getData().get(unit).toList());
                         double average = 0;
+                        Matrix O = fl.getData().get(unit);
                         for(int kernel = 0; kernel < connections; ++kernel) {
                             int val = unit*connections + kernel;
                             Matrix K = pl.getWW(unit, kernel);
-                            Matrix O = new Matrix(fl.getData().get(val).toList());
-                            double error = errors.get(0, val);
-                            average += error;
-                            Matrix dif = O
-                                    .multiply(O.getNegative().sum(1))
-                                    .multiply(I.getTranspose())
-                                    .multiply(lr*error);
-                            K = K.sum(dif);
+                            List<Double> errorList = new ArrayList<>();
+                            for(int e = val*lenErrorsPerConnect; e < lenErrorsPerConnect+val*lenErrorsPerConnect; ++e) {
+                                errorList.add(errors.get(0, e));
+                            }
+                            for(int e = 0; e < errorList.size(); ++e) {
+                                double error = errorList.get(e);
+                                average += error;
+                                for(Pair<Integer, Integer> pair : O.getSquare(fl.getK(), e)) {
+                                    double outputValue = O.get(pair.getFirst(), pair.getSecond());
+                                    double inputValue = pl.getData().get(unit).get(pair.getFirst() + K.getN()/2, pair.getSecond() + K.getM()/2);
+                                    K = K.sum(lr*outputValue*(1-outputValue)*inputValue*error);
+                                }
+                            }
                             pl.setWW(unit, kernel, K);
-
                         }
-                        average /= connections;
+                        average /= (connections * lenErrorsPerConnect);
                         new_errors.add(average);
                     }
                     errors = new Matrix(new_errors);
@@ -192,14 +196,16 @@ public class NeuralNetwork implements Serializable {
                 if(nextLayer instanceof FilterLayer fl) {
                     int connections = fl.getUnits();
                     for(int kernel = 0; kernel < connections; ++kernel) {
-                        Matrix O = new Matrix(fl.getData().get(kernel).toList());
+                        Matrix O = fl.getData().get(kernel);
                         Matrix K = il.getW().get(kernel);
                         double error = errors.get(0, kernel);
-                        Matrix dif = O
-                                .multiply(O.getNegative().sum(1))
-                                .multiply(I.getTranspose())
-                                .multiply(lr*error);
-                        K = K.sum(dif);
+                        for(int y = 0; y < O.getM(); ++y) {
+                            for(int x = 0; x < O.getN(); ++x) {
+                                double inputValue = il.getData().get(x + K.getN()/2, y + K.getM()/2);
+                                double outputValue = O.get(x, y);
+                                K = K.sum(lr*outputValue*(1-outputValue)*inputValue*error);
+                            }
+                        }
                         il.setW(kernel, K);
                     }
                 }
@@ -306,6 +312,7 @@ public class NeuralNetwork implements Serializable {
 
     public void toDefault() {
         load(defaultLayers, defaultLr);
+        init();
     }
 
     public synchronized void saveWeights(String category, String id) {

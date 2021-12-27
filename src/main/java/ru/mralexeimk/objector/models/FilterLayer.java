@@ -24,6 +24,10 @@ public class FilterLayer extends Layer implements Serializable {
         this.data = data;
     }
 
+    public int getK() {
+        return K;
+    }
+
     @Override
     public void toDefault() {
         K = getSize()/ getNextLayer().getSize();

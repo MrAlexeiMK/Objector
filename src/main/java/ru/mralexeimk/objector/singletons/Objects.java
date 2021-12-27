@@ -6,11 +6,13 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Objects {
-    private static HashMap<String, NeuralNetwork> nn;
+    private static ConcurrentHashMap<String, NeuralNetwork> nn;
     private static String category;
 
     private static int queue_count;
@@ -21,9 +23,9 @@ public class Objects {
         query_res = null;
         Objects.category = category;
         Set<String> list = getObjectsInDirectory();
-        nn = new HashMap<>();
+        nn = new ConcurrentHashMap<>();
         for(String id : list) {
-            addObject(id);
+            addCurrentThreadObject(id);
         }
     }
 
@@ -55,14 +57,21 @@ public class Objects {
         return list;
     }
 
+    public static void addCurrentThreadObject(String name) {
+        if (!getObjects().contains(name)) {
+            NeuralNetwork neuralNetwork = new NeuralNetwork(category, name);
+            nn.put(name, neuralNetwork);
+        }
+    }
+
     public static void addObject(String name) {
         new Thread(() -> {
-            NeuralNetwork neuralNetwork = null;
-            if (!getObjects().contains(name)) {
-                neuralNetwork = new NeuralNetwork(category, name);
-                nn.put(name, neuralNetwork);
-            }
+            addCurrentThreadObject(name);
         }).start();
+    }
+
+    public static void addAllObjects(List<String> names) {
+        for(String name : names) addCurrentThreadObject(name);
     }
 
     public static void deleteObject(String name) {
@@ -92,12 +101,18 @@ public class Objects {
     }
 
     public static synchronized void train(List<Double> input, String id) {
-        List<Double> output = new ArrayList<>(Arrays.asList(0.01));
-        List<Double> output2 = new ArrayList<>(Arrays.asList(0.99));
+        currentThreadTrain(input, id);
+    }
+
+    public static void currentThreadTrain(List<Double> input, String id) {
+        List<Double> output = new ArrayList<>(List.of(0.99/getNeuralNetworks().size()));
+        List<Double> output2 = new ArrayList<>(List.of(0.99));
         if (getNeuralNetworks().containsKey(id)) {
             NeuralNetwork neuralNetwork = getNeuralNetwork(id);
             neuralNetwork.train(input, output2);
-            for (String name : getNeuralNetworks().keySet()) {
+            Iterator<String> it = getNeuralNetworks().keySet().iterator();
+            while(it.hasNext()) {
+                String name = it.next();
                 NeuralNetwork n = getNeuralNetwork(name);
                 if (!name.equals(id)) {
                     n.train(input, output);
@@ -116,12 +131,14 @@ public class Objects {
     }
 
     public static void saveToFiles() {
-        new Thread(() -> {
-            for (String obj : getObjects()) {
-                NeuralNetwork n = getNeuralNetwork(obj);
-                n.saveWeights(category, obj);
-            }
-        }).start();
+        new Thread(Objects::saveToFilesCurrentThread).start();
+    }
+
+    public static void saveToFilesCurrentThread() {
+        for (String obj : getObjects()) {
+            NeuralNetwork n = getNeuralNetwork(obj);
+            n.saveWeights(category, obj);
+        }
     }
 
     public static class Result {
@@ -145,6 +162,7 @@ public class Objects {
     public static Result query(List<Double> input) {
         String res = null;
         double max = 0;
+        System.out.println("============");
         if(input != null && !input.isEmpty()) {
             for (String name : getNeuralNetworks().keySet()) {
                 List<Double> output = getNeuralNetwork(name).query(input);
@@ -152,8 +170,10 @@ public class Objects {
                     max = output.get(0);
                     res = name;
                 }
+                System.out.println(name + " , " + output.get(0));
             }
         }
+        System.out.println("============");
         return new Result(res, max);
     }
 
@@ -162,15 +182,17 @@ public class Objects {
     }
 
     public static void threadQuery(List<Double> input) {
-        new Thread(() -> {
-            query_res = query(input);
-        }).start();
+        new Thread(() -> query_res = query(input)).start();
     }
 
     public static void trainFromFile(String path) {
+        File file = null;
         try {
-            File file = new File(Main.class.getResource(path).toURI());
-            Scanner sc = new Scanner(file);
+            file = new File(Main.class.getResource(path).toURI());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        try (Scanner sc = new Scanner(file)) {
             String line;
             int j = 0;
             while(sc.hasNextLine()) {
@@ -184,21 +206,23 @@ public class Objects {
                     inputs.add(t);
                 }
                 ++j;
-                train(inputs, id);
+                currentThreadTrain(inputs, id);
                 System.out.println(j);
             }
-            sc.close();
         } catch(Exception e) {
             e.printStackTrace();
         }
     }
 
     public static void testFromFile(String path) {
+        File file = null;
         try {
-            File file = new File(Main.class.getResource(path).toURI());
-            Scanner sc = new Scanner(file);
+            file = new File(Main.class.getResource(path).toURI());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        try (Scanner sc = new Scanner(file)) {
             String line;
-            int j = 0;
             int count = 0;
             int count_correct = 0;
             while(sc.hasNextLine()) {
@@ -214,10 +238,9 @@ public class Objects {
                 }
                 String target = query(inputs).getId();
                 System.out.println("Correct: " + correct + ", Output: " + target);
-                if(correct == target) ++count_correct;
+                if(correct.equals(target)) ++count_correct;
             }
             System.out.println((double)100*count_correct/count + "%");
-            sc.close();
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -242,7 +265,9 @@ public class Objects {
                 for (int x = 0; x < newW; ++x) {
                     int rgb = im.getRGB(x, y);
                     int red = 255 - (rgb >> 16) & 0xFF;
-                    res.add((double) red);
+                    int green = 255 - (rgb >> 8) & 0xFF;
+                    int blue = 255 - rgb & 0xFF;
+                    res.add((double) (red+green+blue)/3.0);
                 }
             }
             return res;
@@ -275,7 +300,7 @@ public class Objects {
         return nn.get(id);
     }
 
-    public static HashMap<String, NeuralNetwork> getNeuralNetworks() {
+    public static ConcurrentHashMap<String, NeuralNetwork> getNeuralNetworks() {
         return nn;
     }
 }

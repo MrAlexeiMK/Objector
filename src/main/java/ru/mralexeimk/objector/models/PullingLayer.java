@@ -20,33 +20,20 @@ public class PullingLayer extends Layer implements Serializable {
         return data;
     }
 
-    public void setData(List<Matrix> data) {
-        this.data = data;
-    }
-
     public List<List<Matrix>> getW() {
         return W;
     }
 
-    public void setW(List<List<Matrix>> W) {
-        this.W = W;
-    }
-
-    public void setWeightOfUnit(int unit, List<Matrix> W) {
-        getW().get(unit).clear();
-        getW().get(unit).addAll(W);
+    public void setData(List<Matrix> data) {
+        this.data = data;
     }
 
     public void setWW(int unit, int kernel, Matrix W) {
-        getW().get(unit).set(kernel, W);
+        this.W.get(unit).set(kernel, W);
     }
 
     public Matrix getWW(int unit, int kernel) {
-        return getW().get(unit).get(kernel);
-    }
-
-    public List<Matrix> getWeightsOfUnit(int unit) {
-        return W.get(unit);
+        return W.get(unit).get(kernel);
     }
 
     @Override
@@ -58,7 +45,8 @@ public class PullingLayer extends Layer implements Serializable {
             for(int i = 0; i < getUnits(); ++i) {
                 List<Matrix> res = new ArrayList<>();
                 for (int j = 0; j < val; ++j) {
-                    res.add(new Matrix(kernel, kernel, -0.99, 0.99));
+                    res.add(new Matrix(kernel, kernel, -1/Math.sqrt(next.getSize()*next.getSize()),
+                            1/Math.sqrt(next.getSize()*next.getSize())));
                 }
                 W.add(res);
             }
@@ -69,15 +57,22 @@ public class PullingLayer extends Layer implements Serializable {
     public void evaluate() {
         Layer next = getNextLayer();
         if(next instanceof NeuronsLayer nl) {
-            if(getUnits() == next.getUnits()) {
+            if(getUnits() == nl.getUnits()) {
                 List<Double> res = new ArrayList<>();
                 for(Matrix m : getData()) {
                     res.add(m.getAverage());
                 }
                 nl.setData(res);
             }
+            else if(nl.getUnits() == getUnits()*getSize()*getSize()) {
+                List<Double> res = new ArrayList<>();
+                for(Matrix m : getData()) {
+                    res.addAll(m.toList());
+                }
+                nl.setData(res);
+            }
             else {
-                throw new IndexOutOfBoundsException("Pulling layer and NeuronsLayer has different units");
+                throw new IndexOutOfBoundsException("Cannot connect Pulling layer and Neurons layer");
             }
         }
         else if(next instanceof FilterLayer fl) {
