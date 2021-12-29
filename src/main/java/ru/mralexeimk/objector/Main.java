@@ -25,16 +25,17 @@ public class Main {
             new NeuronsLayer(60, 1, LayerType.NEURONS),
             new OutputLayer(10, 1, LayerType.OUTPUT)
     ));
+
     public static void main(String[] args) {
-        //MainApplication.main(args);
-        mnistTestMultiNet();
+        MainApplication.main(args);
+        //mnistTest();
     }
 
     public static void mnistTest() {
         NeuralNetwork nn = new NeuralNetwork(layers, 0.2);
         nn.printData();
         nn.printWeights();
-        for(int i = 0; i < 50; ++i) nn.trainFromFile("/train/mnist_train_100.csv");
+        for(int i = 0; i < 100; ++i) nn.trainFromFile("/test/mnist_test_10.csv");
         nn.printData();
         nn.printWeights();
         nn.testFromFile("/test/mnist_test_10.csv");

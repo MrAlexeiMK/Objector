@@ -8,14 +8,17 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import ru.mralexeimk.objector.models.NeuralNetwork;
+import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 import ru.mralexeimk.objector.singletons.Objects;
 import ru.mralexeimk.objector.other.TableObject;
 import ru.mralexeimk.objector.other.WebCamState;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,48 +41,45 @@ public class MainController {
 
     public void tableInit() {
         list.getItems().clear();
-        String key = category.getValue().toString();
-        Objects.init(key);
-        for(String obj : Objects.getObjects()) {
-            NeuralNetwork nn = Objects.getNeuralNetwork(obj);
+        NeuralNetwork nn = NeuralNetworkListener.get();
+        for(String obj : nn.getObjects()) {
             list.getItems().add(new TableObject(obj, nn.getConfiguration(), nn.getLearningRate()));
         }
     }
 
     public void tableUpdate() {
         try {
+            NeuralNetwork nn = NeuralNetworkListener.get();
             Set<String> list_objects = new HashSet<>();
             for(TableObject to : list.getItems()) {
                 list_objects.add(to.getId());
             }
-            if (!Objects.getObjects().containsAll(list_objects) || !list_objects.containsAll(Objects.getObjects())) {
+            if (!nn.getObjects().containsAll(list_objects) || !list_objects.containsAll(nn.getObjects())) {
                 error.setText("");
                 delete.setDisable(false);
                 add.setDisable(false);
 
-                for(String obj : Objects.getObjects()) {
-                    if(!list_objects.contains(obj)) {
-                        NeuralNetwork nn = Objects.getNeuralNetwork(obj);
-                        list.getItems().add(new TableObject(obj, nn.getConfiguration(), nn.getLearningRate()));
-                    }
-                }
-                list.getItems().removeIf(to -> !Objects.getObjects().contains(to.getId()));
+                tableInit();
             }
         } catch (Exception e) {}
     }
 
     @FXML
     public void initialize() {
+        File file = new File("weights/default.w");
+        file.getParentFile().mkdirs();
+        try {
+            file.createNewFile();
+        } catch (IOException ignored) {}
+
+        file = new File("weights/");
+
         listId.setCellValueFactory(new PropertyValueFactory<>("id"));
         listConfiguration.setCellValueFactory(new PropertyValueFactory<>("configuration"));
         listLr.setCellValueFactory(new PropertyValueFactory<>("lr"));
-        File file = new File("weights/");
-        file.mkdirs();
-        File file2 = new File("weights/default/");
-        file2.mkdirs();
         for(File fe : file.listFiles()) {
-            if(fe.isDirectory()) {
-                category.getItems().add(fe.getName());
+            if(!fe.isDirectory()) {
+                category.getItems().add(fe.getName().split("\\.")[0]);
             }
         }
         if(!category.getItems().isEmpty()) {
@@ -95,6 +95,8 @@ public class MainController {
     }
     @FXML
     public void changeCategory() {
+        String key = category.getValue().toString();
+        NeuralNetworkListener.init(key);
         tableInit();
     }
     @FXML
@@ -113,9 +115,9 @@ public class MainController {
     }
     @FXML
     protected void onClickOpen() {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setInitialDirectory(new File("weights/"));
-        directoryChooser.showDialog(list.getScene().getWindow());
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File("weights/"));
+        fileChooser.showOpenDialog(list.getScene().getWindow());
     }
     @FXML
     protected void onClickAdd() {
@@ -126,7 +128,7 @@ public class MainController {
         if(list.getSelectionModel() != null) {
             TableObject to = list.getSelectionModel().getSelectedItem();
             if (to != null) {
-                Objects.deleteObject(to.getId());
+                NeuralNetworkListener.get().removeObject(to.getId());
                 delete.setDisable(true);
             }
         }

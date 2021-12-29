@@ -5,6 +5,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 import ru.mralexeimk.objector.singletons.Objects;
 
 public class NewPageController {
@@ -29,7 +30,7 @@ public class NewPageController {
     @FXML
     public void onClickOK() {
         if(!field.getText().isEmpty()) {
-            Objects.addObject(field.getText());
+            NeuralNetworkListener.get().addObject(field.getText());
             close();
         }
     }

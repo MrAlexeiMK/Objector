@@ -10,7 +10,7 @@
     <bottom>
         <FlowPane fx:id="fpBottomPane" alignment="CENTER" columnHalignment="CENTER" hgap="50.0" prefHeight="80.0" prefWidth="200.0" style="-fx-background-color:#ccc;">
             <children>
-            <Label fx:id="queueLabel" prefHeight="18.0" prefWidth="104.0" text="Обучается:  " />
+            <Label fx:id="queueLabel" prefHeight="18.0" prefWidth="104.0" text="В очереди:" />
                 <Button fx:id="btnStartCamera" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#startCamera" prefHeight="50.0" prefWidth="190.0" text="Запустить камеру">
                     <font>
                         <Font name="Segoe UI" size="18.0" fx:id="x1" />
@@ -30,9 +30,9 @@
         </BorderPane>
     </center>
     <top>
-        <GridPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="120.0" style="-fx-background-color:#ccc;&#10;">
+        <GridPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="120.0" prefWidth="805.0" style="-fx-background-color:#ccc;&#10;">
             <children>
-                <Label fx:id="header" text="Обучение" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="0" GridPane.rowSpan="1" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
+                <Label fx:id="header" text="Обучение" GridPane.columnIndex="0" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.rowIndex="0" GridPane.rowSpan="1" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
                     <font>
                         <Font name="Segoe UI" size="34.0" />
                     </font>
@@ -46,10 +46,21 @@
                     </GridPane.margin>
                 </Label>
                 <ComboBox fx:id="cbCameraOptions" prefHeight="38.0" prefWidth="357.0" style="-fx-font-size: 18px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Button fx:id="start" alignment="CENTER" contentDisplay="CENTER" disable="true" mnemonicParsing="false" onAction="#startTrain" prefHeight="37.0" prefWidth="272.0" text="Начать обучение" visible="false" GridPane.columnIndex="2" GridPane.rowIndex="1">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Button>
+            <Label fx:id="error" prefHeight="18.0" prefWidth="244.0" textFill="#ff0303" GridPane.columnIndex="2">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Label>
             </children>
             <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="795.0" minWidth="10.0" prefWidth="418.0" />
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="502.0" minWidth="10.0" prefWidth="482.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="795.0" minWidth="10.0" prefWidth="193.6" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="737.6000305175781" minWidth="10.0" prefWidth="405.79999999999995" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="737.6000305175781" minWidth="10.0" prefWidth="301.0" />
             </columnConstraints>
             <rowConstraints>
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />

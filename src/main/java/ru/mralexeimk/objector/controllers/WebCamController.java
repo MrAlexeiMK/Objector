@@ -21,6 +21,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
+import ru.mralexeimk.objector.other.Pair;
+import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 import ru.mralexeimk.objector.singletons.Objects;
 import ru.mralexeimk.objector.other.WebCamState;
 
@@ -29,6 +31,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -38,6 +42,8 @@ public class WebCamController implements Initializable {
     private Button btnStartCamera;
     @FXML
     private Button btnStopCamera;
+    @FXML
+    private Button start;
     @FXML
     private ChoiceBox object;
     @FXML
@@ -51,15 +57,19 @@ public class WebCamController implements Initializable {
     @FXML
     private ImageView imgWebCamCapturedImage;
     @FXML
-    private Label queueLabel, header;
+    private Label queueLabel, header, error;
+
+    private List<Pair<List<Double>, String>> trainingData;
 
     public void setState(WebCamState state) {
         this.state = state;
         if(state == WebCamState.TRAIN) {
             cbCameraOptions.setDisable(true);
+            start.setVisible(true);
+            start.setDisable(false);
             object.setVisible(true);
             object.setDisable(false);
-            for (String obj : Objects.getObjects()) {
+            for (String obj : NeuralNetworkListener.get().getObjects()) {
                 object.getItems().add(obj);
             }
         }
@@ -111,6 +121,7 @@ public class WebCamController implements Initializable {
         isOpen = true;
         btnStartCamera.setDisable(true);
         btnStopCamera.setDisable(true);
+        trainingData = new ArrayList<>();
         ObservableList<WebCamInfo> options = FXCollections.observableArrayList();
         int webCamCounter = 0;
         for (Webcam webcam : Webcam.getWebcams()) {
@@ -134,13 +145,26 @@ public class WebCamController implements Initializable {
     }
 
     public void choiceObject() {
-        String obj = object.getValue().toString();
         cbCameraOptions.setDisable(false);
+    }
+
+    public void startTrain() {
+        error.setText("");
+        if(trainingData == null || trainingData.isEmpty()) {
+            error.setText("Нет данных для обучения");
+            return;
+        }
+        List<Pair<List<Double>, String>> copyTrainingData = new ArrayList<>(trainingData);
+        Collections.shuffle(copyTrainingData);
+        for(Pair<List<Double>, String> row : copyTrainingData) {
+            NeuralNetworkListener.threadTrain(row.getFirst(), row.getSecond());
+        }
+        trainingData.clear();
     }
 
     public void close() {
         if(state == WebCamState.TRAIN) {
-            Objects.saveToFiles();
+            NeuralNetworkListener.save();
         }
         closeCamera();
         stopTask = true;
@@ -219,23 +243,23 @@ public class WebCamController implements Initializable {
                         if ((grabbedImage = selWebCam.getImage()) != null) {
                             if(!stopCamera) {
                                 BufferedImage finalPredImage = predImage;
-                                grabbedImage = Objects.resize(grabbedImage, 160, 90);
+                                grabbedImage = NeuralNetworkListener.resize(grabbedImage, 160, 90);
                                 Platform.runLater(() -> {
                                     if (finalPredImage != null && grabbedImage != null) {
                                         if (state == WebCamState.TRAIN) {
                                             grabbedImage = convert(finalPredImage, grabbedImage);
-                                            List<Double> input = Objects.parseImage(grabbedImage, 28, 28);
-                                            Objects.threadTrain(input, object.getValue().toString());
-                                            queueLabel.setText("В очереди: " + Objects.getQueueCount());
+                                            List<Double> input = NeuralNetworkListener.parseImage(grabbedImage, 28, 28);
+                                            trainingData.add(new Pair<>(input, object.getValue().toString()));
+                                            NeuralNetworkListener.increaseQueueCount();
+                                            queueLabel.setText("В очереди: " + NeuralNetworkListener.getQueueCount());
                                         } else if (state == WebCamState.QUERY) {
-                                            List<Double> input = Objects.parseImage(convert(finalPredImage, grabbedImage), 28, 28);
-                                            Objects.threadQuery(input);
-                                            Objects.Result res = Objects.getQueryResult();
+                                            List<Double> input = NeuralNetworkListener.parseImage(convert(finalPredImage, grabbedImage), 28, 28);
+                                            NeuralNetworkListener.threadQuery(input);
+                                            Pair<String, Double> res = NeuralNetworkListener.getQueryResult();
                                             if (res != null) {
                                                 String cur = "";
                                                 if (!header.getText().equals("")) cur = header.getText().split(", ")[0];
-                                                header.setText(res.getId() + ", " + Math.round(res.getProb() * 100) / 100.0);
-                                                if (!cur.equals(res.getId()) && res.getProb() > 0.9 && !res.getId().equals("Nothing")) speak(res.getId());
+                                                header.setText(res.getFirst() + ", " + Math.round(res.getSecond() * 100) / 100.0);
                                             }
                                         }
                                     }
@@ -250,7 +274,7 @@ public class WebCamController implements Initializable {
                             }
                             else if(state == WebCamState.TRAIN) {
                                 Platform.runLater(() -> {
-                                    queueLabel.setText("В очереди: " + Objects.getQueueCount());
+                                    queueLabel.setText("В очереди: " + NeuralNetworkListener.getQueueCount());
                                 });
                             }
                         }
