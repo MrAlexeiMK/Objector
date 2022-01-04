@@ -1,5 +1,5 @@
 # Objector
- JavaFX application to train/query convolutional neural network of moving objects from webcam gui  
+ JavaFX application to train/query convolutional neural network from webcam gui  
  
  <b>Installation:</b> Just download Objector.jar and run  
  
