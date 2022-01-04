@@ -97,5 +97,9 @@ public abstract class Layer implements Serializable {
 
     public void toDefault() {};
 
+    public void addRow() {};
+
+    public void removeRow(int index) {};
+
     public void evaluate() {};
 }

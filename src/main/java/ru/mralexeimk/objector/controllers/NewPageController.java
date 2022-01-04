@@ -5,11 +5,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import ru.mralexeimk.objector.other.NewPageState;
 import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 import ru.mralexeimk.objector.singletons.Objects;
 
+import java.io.File;
+import java.io.IOException;
+
 public class NewPageController {
     public static boolean isOpen = false;
+    private NewPageState state = null;
     @FXML
     private Label label;
     @FXML
@@ -29,10 +34,26 @@ public class NewPageController {
 
     @FXML
     public void onClickOK() {
-        if(!field.getText().isEmpty()) {
-            NeuralNetworkListener.get().addObject(field.getText());
-            close();
+        if(state != null) {
+            if (!field.getText().isEmpty()) {
+                String text = field.getText();
+                if(state == NewPageState.ADD_OBJECT) {
+                    NeuralNetworkListener.get().addObject(text);
+                }
+                else if(state == NewPageState.ADD_CATEGORY) {
+                    File file = new File("weights/"+text+".w");
+                    file.getParentFile().mkdirs();
+                    try {
+                        file.createNewFile();
+                    } catch (IOException ignored) {}
+                }
+                close();
+            }
         }
+    }
+
+    public void setState(NewPageState state) {
+        this.state = state;
     }
 
     public void close() {

@@ -3,6 +3,7 @@ package ru.mralexeimk.objector.models;
 import lombok.Data;
 import ru.mralexeimk.objector.other.LayerType;
 import ru.mralexeimk.objector.other.Pair;
+import ru.mralexeimk.objector.singletons.SettingsListener;
 
 import java.io.*;
 import java.util.*;
@@ -19,20 +20,6 @@ public class NeuralNetwork implements Serializable {
 
     private final String defaultId = "default";
     private final List<String> defaultObjects = new ArrayList<>(List.of("Nothing"));
-    private final List<Layer> defaultLayers = new ArrayList<>(Arrays.asList(
-            new InputLayer(1, 28, LayerType.INPUT),
-            new FilterLayer(8, 24, LayerType.FILTER),
-            new PullingLayer(8, 12, LayerType.PULLING),
-            new FilterLayer(32, 8, LayerType.FILTER),
-            new PullingLayer(32, 4, LayerType.PULLING),
-            new NeuronsLayer(512, 1, LayerType.NEURONS),
-            new OutputLayer(1, 1, LayerType.OUTPUT)
-    ));
-    private static List<Layer> defaultLayers2 = new ArrayList<>(Arrays.asList(
-            new InputLayer(1, 28, LayerType.INPUT),
-            new NeuronsLayer(120, 1, LayerType.NEURONS),
-            new OutputLayer(1, 1, LayerType.OUTPUT)
-    ));
     private final double defaultLr = 0.1;
 
     public NeuralNetwork(String id, List<Layer> layers, double lr, List<String> objects) {
@@ -45,13 +32,13 @@ public class NeuralNetwork implements Serializable {
     }
 
     public NeuralNetwork(double lr) {
-        this.layers = defaultLayers;
+        this.layers = SettingsListener.get().getConfigurationLayers();
         this.lr = lr;
         init();
     }
 
     public NeuralNetwork() {
-        load(defaultId, defaultLayers, defaultLr, defaultObjects);
+        load(defaultId, SettingsListener.get().getConfigurationLayers(), defaultLr, defaultObjects);
         init();
     }
 
@@ -85,22 +72,37 @@ public class NeuralNetwork implements Serializable {
         layers.remove(layers.size()-1);
         OutputLayer ol = new OutputLayer(units+1, 1, LayerType.OUTPUT);
         layers.add(ol);
-        if(layers.get(layers.size()-2) instanceof NeuronsLayer) {
+        if(layers.get(layers.size()-2) instanceof NeuronsLayer nl) {
             layers.get(layers.size()-2).setNextLayer(ol);
-            layers.get(layers.size()-2).toDefault();
+            if(SettingsListener.get().isRewriteWeights()) {
+                layers.get(layers.size()-2).toDefault();
+            }
+            else {
+                layers.get(layers.size()-2).addRow();
+            }
         }
         saveWeights(id);
     }
 
     public void removeObject(String objectId) {
+        int index = 0;
+        for(String obj : objects) {
+            if(obj.equals(objectId)) break;
+            ++index;
+        }
         objects.remove(objectId);
         int units = getOutputLayer().getUnits();
         layers.remove(layers.size()-1);
         OutputLayer ol = new OutputLayer(units-1, 1, LayerType.OUTPUT);
         layers.add(ol);
-        if(layers.get(layers.size()-2) instanceof NeuronsLayer nl) {
-            nl.setNextLayer(ol);
-            nl.toDefault();
+        if(layers.get(layers.size()-2) instanceof NeuronsLayer) {
+            layers.get(layers.size()-2).setNextLayer(ol);
+            if(SettingsListener.get().isRewriteWeights()) {
+                layers.get(layers.size()-2).toDefault();
+            }
+            else {
+                layers.get(layers.size()-2).removeRow(index);
+            }
         }
         saveWeights(id);
     }
@@ -401,7 +403,7 @@ public class NeuralNetwork implements Serializable {
     }
 
     public void toDefault() {
-        load(defaultId, defaultLayers, defaultLr, defaultObjects);
+        load(defaultId, SettingsListener.get().getConfigurationLayers(), defaultLr, defaultObjects);
         init();
     }
 

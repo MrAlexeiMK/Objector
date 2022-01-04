@@ -25,6 +25,7 @@ import ru.mralexeimk.objector.other.Pair;
 import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 import ru.mralexeimk.objector.singletons.Objects;
 import ru.mralexeimk.objector.other.WebCamState;
+import ru.mralexeimk.objector.singletons.SettingsListener;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -243,22 +244,23 @@ public class WebCamController implements Initializable {
                         if ((grabbedImage = selWebCam.getImage()) != null) {
                             if(!stopCamera) {
                                 BufferedImage finalPredImage = predImage;
-                                grabbedImage = NeuralNetworkListener.resize(grabbedImage, 160, 90);
+                                grabbedImage = NeuralNetworkListener.resize(grabbedImage, SettingsListener.get().getWebCamQuality().getFirst()
+                                        , SettingsListener.get().getWebCamQuality().getSecond());
                                 Platform.runLater(() -> {
                                     if (finalPredImage != null && grabbedImage != null) {
+                                        if(SettingsListener.get().isOnlyMoving()) grabbedImage = convert(finalPredImage, grabbedImage);
+                                        List<Double> input = NeuralNetworkListener.parseImage(grabbedImage, 28, 28);
+                                        for(int i = 0; i < input.size(); ++i) {
+                                            input.set(i, input.get(i)/256.0 + 0.01);
+                                        }
                                         if (state == WebCamState.TRAIN) {
-                                            grabbedImage = convert(finalPredImage, grabbedImage);
-                                            List<Double> input = NeuralNetworkListener.parseImage(grabbedImage, 28, 28);
                                             trainingData.add(new Pair<>(input, object.getValue().toString()));
                                             NeuralNetworkListener.increaseQueueCount();
                                             queueLabel.setText("В очереди: " + NeuralNetworkListener.getQueueCount());
                                         } else if (state == WebCamState.QUERY) {
-                                            List<Double> input = NeuralNetworkListener.parseImage(convert(finalPredImage, grabbedImage), 28, 28);
                                             NeuralNetworkListener.threadQuery(input);
                                             Pair<String, Double> res = NeuralNetworkListener.getQueryResult();
                                             if (res != null) {
-                                                String cur = "";
-                                                if (!header.getText().equals("")) cur = header.getText().split(", ")[0];
                                                 header.setText(res.getFirst() + ", " + Math.round(res.getSecond() * 100) / 100.0);
                                             }
                                         }

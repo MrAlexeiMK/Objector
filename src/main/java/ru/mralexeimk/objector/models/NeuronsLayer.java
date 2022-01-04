@@ -40,6 +40,17 @@ public class NeuronsLayer extends Layer implements Serializable {
     }
 
     @Override
+    public void addRow(){
+        Matrix bottomRow = new Matrix(getUnits(), 1);
+        W.joinBottom(bottomRow);
+    }
+
+    @Override
+    public void removeRow(int index) {
+        W.removeRow(index);
+    }
+
+    @Override
     public void evaluate() {
         List<Double> res = evaluateByDefault(data, W);
         if(getNextLayer() instanceof NeuronsLayer nl) {

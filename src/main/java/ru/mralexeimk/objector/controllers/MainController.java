@@ -12,10 +12,12 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import ru.mralexeimk.objector.models.NeuralNetwork;
+import ru.mralexeimk.objector.other.NewPageState;
 import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 import ru.mralexeimk.objector.singletons.Objects;
 import ru.mralexeimk.objector.other.TableObject;
 import ru.mralexeimk.objector.other.WebCamState;
+import ru.mralexeimk.objector.singletons.SettingsListener;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +37,7 @@ public class MainController {
     @FXML
     private ChoiceBox category;
     @FXML
-    private Button delete, add;
+    private Button delete, add, addCategory;
     @FXML
     private Label error;
 
@@ -49,6 +51,7 @@ public class MainController {
 
     public void tableUpdate() {
         try {
+            updateCategories();
             NeuralNetwork nn = NeuralNetworkListener.get();
             Set<String> list_objects = new HashSet<>();
             for(TableObject to : list.getItems()) {
@@ -66,22 +69,23 @@ public class MainController {
 
     @FXML
     public void initialize() {
+        SettingsListener.init();
         File file = new File("weights/default.w");
         file.getParentFile().mkdirs();
         try {
             file.createNewFile();
         } catch (IOException ignored) {}
 
-        file = new File("weights/");
+        file = new File("settings.objector");
+        try {
+            file.createNewFile();
+        } catch (IOException ignored) {}
 
         listId.setCellValueFactory(new PropertyValueFactory<>("id"));
         listConfiguration.setCellValueFactory(new PropertyValueFactory<>("configuration"));
         listLr.setCellValueFactory(new PropertyValueFactory<>("lr"));
-        for(File fe : file.listFiles()) {
-            if(!fe.isDirectory()) {
-                category.getItems().add(fe.getName().split("\\.")[0]);
-            }
-        }
+
+        updateCategories();
         if(!category.getItems().isEmpty()) {
             category.setValue(category.getItems().get(0));
         }
@@ -114,6 +118,10 @@ public class MainController {
         else error.setText("Нет объектов");
     }
     @FXML
+    protected void onClickAddCategory() {
+        openNewPage(NewPageState.ADD_CATEGORY);
+    }
+    @FXML
     protected void onClickOpen() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(new File("weights/"));
@@ -121,7 +129,7 @@ public class MainController {
     }
     @FXML
     protected void onClickAdd() {
-        openNewPage();
+        openNewPage(NewPageState.ADD_OBJECT);
     }
     @FXML
     protected void onClickDelete() {
@@ -135,10 +143,23 @@ public class MainController {
     }
     @FXML
     protected void onClickSettings() {
-
+        openSettings();
     }
 
-    public void openNewPage() {
+    public void updateCategories() {
+        File file = new File("weights/");
+        for(File fe : file.listFiles()) {
+            if(!fe.isDirectory()) {
+                String name = fe.getName().split("\\.")[0];
+                if(!category.getItems().contains(name)) {
+                    category.getItems().add(name);
+                    category.setValue(name);
+                }
+            }
+        }
+    }
+
+    public void openNewPage(NewPageState state) {
         if(!NewPageController.isOpen) {
             try {
                 FXMLLoader root = new FXMLLoader(getClass().getResource("/fxml/newPage.fxml"));
@@ -146,6 +167,23 @@ public class MainController {
                 stage.setTitle("Добавить новый объект");
                 stage.setScene(new Scene(root.load()));
                 NewPageController controller = root.getController();
+                controller.setState(state);
+                stage.setOnHidden(e -> controller.close());
+                stage.show();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void openSettings() {
+        if(!SettingsController.isOpen) {
+            try {
+                FXMLLoader root = new FXMLLoader(getClass().getResource("/fxml/settings.fxml"));
+                Stage stage = new Stage();
+                stage.setScene(new Scene(root.load()));
+                stage.setTitle("Настройки");
+                SettingsController controller = root.getController();
                 stage.setOnHidden(e -> controller.close());
                 stage.show();
             } catch (Exception e) {

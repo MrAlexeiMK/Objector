@@ -379,6 +379,35 @@ public class Matrix implements Serializable {
         }
     }
 
+    public void joinBottom(Matrix m) {
+        if(N == m.getN()) {
+            M += m.getM();
+            for(int y = 0; y < m.getM(); ++y) {
+                List<Double> arr = new ArrayList<>();
+                for(int x = 0; x < m.getN(); ++x) {
+                    arr.add(m.get(x, y));
+                }
+                data.add(arr);
+            }
+        }
+    }
+
+    public void removeRow(int index) {
+        Matrix m = new Matrix(N, M-1);
+        int y = 0;
+        int shift = 0;
+        while(y < M) {
+            if(y == index) {
+                shift = -1;
+                continue;
+            }
+            for (int x = 0; x < N; ++x) {
+                m.set(x, y + shift, get(x, y));
+            }
+            ++y;
+        }
+    }
+
     public Matrix getInverse() {
         if(N != M) throw new IndexOutOfBoundsException("Matrix must be square");
         Matrix E = new Matrix(N, M);
