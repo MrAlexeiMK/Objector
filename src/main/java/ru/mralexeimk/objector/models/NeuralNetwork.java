@@ -20,7 +20,6 @@ public class NeuralNetwork implements Serializable {
 
     private final String defaultId = "default";
     private final List<String> defaultObjects = new ArrayList<>(List.of("Nothing"));
-    private final double defaultLr = 0.1;
 
     public NeuralNetwork(String id, List<Layer> layers, double lr, List<String> objects) {
         load(id, layers, lr, objects);
@@ -38,7 +37,7 @@ public class NeuralNetwork implements Serializable {
     }
 
     public NeuralNetwork() {
-        load(defaultId, SettingsListener.get().getConfigurationLayers(), defaultLr, defaultObjects);
+        load(defaultId, SettingsListener.get().getConfigurationLayers(), SettingsListener.get().getLr(), defaultObjects);
         init();
     }
 
@@ -403,7 +402,7 @@ public class NeuralNetwork implements Serializable {
     }
 
     public void toDefault() {
-        load(defaultId, SettingsListener.get().getConfigurationLayers(), defaultLr, defaultObjects);
+        load(defaultId, SettingsListener.get().getConfigurationLayers(), SettingsListener.get().getLr(), defaultObjects);
         init();
     }
 

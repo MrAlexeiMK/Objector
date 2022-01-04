@@ -15,7 +15,7 @@ public class SettingsController {
     @FXML
     private TextArea configuration;
     @FXML
-    private TextField webCamWeight, webCamHeight;
+    private TextField webCamWeight, webCamHeight, lr;
 
     @FXML
     public void initialize() {
@@ -23,6 +23,7 @@ public class SettingsController {
         rewrite.setSelected(SettingsListener.get().isRewriteWeights());
         onlyMoving.setSelected(SettingsListener.get().isOnlyMoving());
         configuration.setText(SettingsListener.get().getConfiguration());
+        lr.setText(String.valueOf(SettingsListener.get().getLr()));
         webCamWeight.setText(String.valueOf(SettingsListener.get().getWebCamQuality().getFirst()));
         webCamHeight.setText(String.valueOf(SettingsListener.get().getWebCamQuality().getSecond()));
     }
@@ -31,6 +32,7 @@ public class SettingsController {
         try {
             SettingsListener.get().setRewriteWeights(rewrite.isSelected());
             SettingsListener.get().setOnlyMoving(onlyMoving.isSelected());
+            SettingsListener.get().setLr(Double.parseDouble(lr.getText()));
             if (!SettingsListener.get().setConfiguration(configuration.getText())) {
                 SettingsListener.get().toDefaultConfiguration();
             }

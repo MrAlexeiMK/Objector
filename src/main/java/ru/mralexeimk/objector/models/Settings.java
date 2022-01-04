@@ -15,6 +15,7 @@ public class Settings implements Serializable {
     private Pair<Integer, Integer> webCamQuality;
     private boolean onlyMoving;
     private List<Layer> configuration;
+    private double lr;
 
     public Settings() {
         loadFromFile();
@@ -29,12 +30,14 @@ public class Settings implements Serializable {
         this.configuration = settings.configuration;
         this.onlyMoving = settings.onlyMoving;
         this.webCamQuality = settings.webCamQuality;
+        this.lr = settings.lr;
     }
 
     public void toDefault() {
         rewriteWeights = false;
         onlyMoving = true;
         webCamQuality = new Pair<>(160, 90);
+        lr = 0.1;
         toDefaultConfiguration();
     }
 
