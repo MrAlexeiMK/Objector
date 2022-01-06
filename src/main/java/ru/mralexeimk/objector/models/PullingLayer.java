@@ -10,8 +10,8 @@ public class PullingLayer extends Layer implements Serializable {
     private List<Matrix> data;
     private List<List<Matrix>> W;
 
-    public PullingLayer(int units, int size, LayerType layerType) {
-        super(units, size, layerType);
+    public PullingLayer(int units, int size, int index, LayerType layerType) {
+        super(units, size, index, layerType);
         data = new ArrayList<>();
         W = new ArrayList<>();
     }
@@ -57,22 +57,23 @@ public class PullingLayer extends Layer implements Serializable {
     public void evaluate() {
         Layer next = getNextLayer();
         if(next instanceof NeuronsLayer nl) {
+            List<Double> res = new ArrayList<>();
             if(getUnits() == nl.getUnits()) {
-                List<Double> res = new ArrayList<>();
                 for(Matrix m : getData()) {
                     res.add(m.getAverage());
                 }
                 nl.setData(res);
             }
-            else if(nl.getUnits() == getUnits()*getSize()*getSize()) {
-                List<Double> res = new ArrayList<>();
+            else {
                 for(Matrix m : getData()) {
                     res.addAll(m.toList());
                 }
-                nl.setData(res);
-            }
-            else {
-                throw new IndexOutOfBoundsException("Cannot connect Pulling layer and Neurons layer");
+                if(nl.getUnits() == getUnits()*getSize()*getSize()) {
+                    nl.setData(res);
+                }
+                else {
+                    nl.addData(res);
+                }
             }
         }
         else if(next instanceof FilterLayer fl) {

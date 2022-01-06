@@ -12,8 +12,8 @@ public class NeuronsLayer extends Layer implements Serializable {
     private Matrix W;
 
     public NeuronsLayer(int units, int size, LayerType layerType) {
-        super(units, size, layerType);
-        data = new ArrayList<>(Collections.nCopies(units, 0.5));
+        super(units, size, 0, layerType);
+        data = new ArrayList<>();
         W = new Matrix(1, 1);
     }
 
@@ -29,12 +29,20 @@ public class NeuronsLayer extends Layer implements Serializable {
         this.data = data;
     }
 
+    public void addData(List<Double> data) {
+        if(this.data.size() >= getUnits()) {
+            this.data.clear();
+        }
+        this.data.addAll(data);
+    }
+
     public void setW(Matrix W) {
         this.W = W;
     }
 
     @Override
     public void toDefault() {
+        data = new ArrayList<>();
         W = new Matrix(getUnits(), getNextLayer().getUnits(),
                 -1/Math.sqrt(getNextLayer().getUnits()), 1/Math.sqrt(getNextLayer().getUnits()));
     }

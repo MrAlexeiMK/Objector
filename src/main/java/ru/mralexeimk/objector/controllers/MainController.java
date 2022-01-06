@@ -14,7 +14,6 @@ import javafx.util.Duration;
 import ru.mralexeimk.objector.models.NeuralNetwork;
 import ru.mralexeimk.objector.other.NewPageState;
 import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
-import ru.mralexeimk.objector.singletons.Objects;
 import ru.mralexeimk.objector.other.TableObject;
 import ru.mralexeimk.objector.other.WebCamState;
 import ru.mralexeimk.objector.singletons.SettingsListener;
@@ -37,7 +36,7 @@ public class MainController {
     @FXML
     private ChoiceBox category;
     @FXML
-    private Button delete, add, addCategory;
+    private Button delete, add, addCategory, deleteCategory;
     @FXML
     private Label error;
 
@@ -99,9 +98,13 @@ public class MainController {
     }
     @FXML
     public void changeCategory() {
-        String key = category.getValue().toString();
-        NeuralNetworkListener.init(key);
-        tableInit();
+        if(category != null && category.getValue() != null) {
+            String key = category.getValue().toString();
+            if (key.equals("default")) deleteCategory.setDisable(true);
+            else deleteCategory.setDisable(false);
+            NeuralNetworkListener.init(key);
+            tableInit();
+        }
     }
     @FXML
     protected void onClickTrain() {
@@ -121,6 +124,15 @@ public class MainController {
     protected void onClickAddCategory() {
         openNewPage(NewPageState.ADD_CATEGORY);
     }
+
+    @FXML
+    protected void onClickDeleteCategory() {
+        String key = category.getValue().toString();
+        File file = new File("weights/"+key+".w");
+        file.delete();
+        updateCategories();
+    }
+
     @FXML
     protected void onClickOpen() {
         FileChooser fileChooser = new FileChooser();
@@ -148,14 +160,20 @@ public class MainController {
 
     public void updateCategories() {
         File file = new File("weights/");
+        int i = 0;
         for(File fe : file.listFiles()) {
             if(!fe.isDirectory()) {
                 String name = fe.getName().split("\\.")[0];
+                ++i;
                 if(!category.getItems().contains(name)) {
                     category.getItems().add(name);
                     category.setValue(name);
                 }
             }
+        }
+        if(category.getItems().size() != i) {
+            category.getItems().clear();
+            updateCategories();
         }
     }
 

@@ -10,4 +10,8 @@ import java.io.Serializable;
 public class Pair<T, V> implements Serializable {
     private T first;
     private V second;
+
+    public String toString() {
+        return first+", "+second;
+    }
 }

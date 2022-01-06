@@ -10,8 +10,8 @@ public class FilterLayer extends Layer implements Serializable {
     private List<Matrix> data;
     private int K;
 
-    public FilterLayer(int units, int size, LayerType layerType) {
-        super(units, size, layerType);
+    public FilterLayer(int units, int size, int index, LayerType layerType) {
+        super(units, size, index, layerType);
         data = new ArrayList<>();
         K = 2;
     }

@@ -4,15 +4,14 @@ import ru.mralexeimk.objector.other.LayerType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class InputLayer extends Layer implements Serializable {
     private Matrix data;
     private List<Matrix> W;
 
-    public InputLayer(int units, int size, LayerType layerType) {
-        super(units, size, layerType);
+    public InputLayer(int units, int size, int index, LayerType layerType) {
+        super(units, size, index, layerType);
         data = new Matrix(size, size);
         W = new ArrayList<>();
     }

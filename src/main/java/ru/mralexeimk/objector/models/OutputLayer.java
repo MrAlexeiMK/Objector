@@ -10,7 +10,7 @@ public class OutputLayer extends Layer implements Serializable {
     private List<Double> data;
 
     public OutputLayer(int units, int size, LayerType layerType) {
-        super(units, size, layerType);
+        super(units, size, 0, layerType);
         data = new ArrayList<>();
     }
 

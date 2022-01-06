@@ -23,7 +23,6 @@ import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 import ru.mralexeimk.objector.other.Pair;
 import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
-import ru.mralexeimk.objector.singletons.Objects;
 import ru.mralexeimk.objector.other.WebCamState;
 import ru.mralexeimk.objector.singletons.SettingsListener;
 
@@ -60,10 +59,14 @@ public class WebCamController implements Initializable {
     @FXML
     private Label queueLabel, header, error;
 
-    private List<Pair<List<Double>, String>> trainingData;
+    private List<Pair<List<List<Double>>, String>> trainingData;
 
     public void setState(WebCamState state) {
         this.state = state;
+        if(!SettingsListener.get().isOnlyMoving()) {
+            slider.setDisable(true);
+            slider.setVisible(false);
+        }
         if(state == WebCamState.TRAIN) {
             cbCameraOptions.setDisable(true);
             start.setVisible(true);
@@ -155,9 +158,9 @@ public class WebCamController implements Initializable {
             error.setText("Нет данных для обучения");
             return;
         }
-        List<Pair<List<Double>, String>> copyTrainingData = new ArrayList<>(trainingData);
+        List<Pair<List<List<Double>>, String>> copyTrainingData = new ArrayList<>(trainingData);
         Collections.shuffle(copyTrainingData);
-        for(Pair<List<Double>, String> row : copyTrainingData) {
+        for(Pair<List<List<Double>>, String> row : copyTrainingData) {
             NeuralNetworkListener.threadTrain(row.getFirst(), row.getSecond());
         }
         trainingData.clear();
@@ -244,15 +247,15 @@ public class WebCamController implements Initializable {
                         if ((grabbedImage = selWebCam.getImage()) != null) {
                             if(!stopCamera) {
                                 BufferedImage finalPredImage = predImage;
-                                grabbedImage = NeuralNetworkListener.resize(grabbedImage, SettingsListener.get().getWebCamQuality().getFirst()
-                                        , SettingsListener.get().getWebCamQuality().getSecond());
+                                grabbedImage = NeuralNetworkListener.resize(grabbedImage,
+                                        SettingsListener.get().getWebCamQuality().getFirst(),
+                                        SettingsListener.get().getWebCamQuality().getSecond());
                                 Platform.runLater(() -> {
                                     if (finalPredImage != null && grabbedImage != null) {
                                         if(SettingsListener.get().isOnlyMoving()) grabbedImage = convert(finalPredImage, grabbedImage);
-                                        List<Double> input = NeuralNetworkListener.parseImage(grabbedImage, 28, 28);
-                                        for(int i = 0; i < input.size(); ++i) {
-                                            input.set(i, input.get(i)/256.0 + 0.01);
-                                        }
+                                        List<List<Double>> input = NeuralNetworkListener.parseImage(grabbedImage,
+                                                NeuralNetworkListener.get().getInputLayer(0).getSize(),
+                                                NeuralNetworkListener.get().getInputLayer(0).getSize());
                                         if (state == WebCamState.TRAIN) {
                                             trainingData.add(new Pair<>(input, object.getValue().toString()));
                                             NeuralNetworkListener.increaseQueueCount();
@@ -281,7 +284,7 @@ public class WebCamController implements Initializable {
                             }
                         }
                     } catch (Exception e) {
-                        //e.printStackTrace();
+                        e.printStackTrace();
                     }
                 }
                 return true;

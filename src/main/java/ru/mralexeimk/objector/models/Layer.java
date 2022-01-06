@@ -11,13 +11,15 @@ import java.util.List;
 public abstract class Layer implements Serializable {
     private int units;
     private int size;
+    private int index;
     private LayerType layerType;
     private Layer nextLayer;
 
-    public Layer(int units, int size, LayerType layerType) {
+    public Layer(int units, int size, int index, LayerType layerType) {
         this.units = units;
         this.size = size;
         this.layerType = layerType;
+        this.index = index;
         nextLayer = null;
     }
 

@@ -7,7 +7,6 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import ru.mralexeimk.objector.other.NewPageState;
 import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
-import ru.mralexeimk.objector.singletons.Objects;
 
 import java.io.File;
 import java.io.IOException;

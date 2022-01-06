@@ -52,6 +52,10 @@ public class Matrix implements Serializable {
         assign(m);
     }
 
+    public Matrix(Matrix m, int index, int yLen) {
+        assign(m, index, yLen);
+    }
+
     public Matrix(List<Double> vector) {
         N = 1;
         M = vector.size();
@@ -69,6 +73,24 @@ public class Matrix implements Serializable {
             }
         }
         return res;
+    }
+
+    public void assign(Matrix m, int yLen) {
+        assign(m, 0, yLen);
+    }
+
+    public void assign(Matrix m, int index, int yLen) {
+        this.N = m.getN();
+        this.M = yLen;
+        data = new ArrayList<>();
+        for(int i = 0; i < M; ++i) {
+            data.add(new ArrayList<>());
+        }
+        for(int x = 0; x < m.getN(); ++x) {
+            for(int y = index; y < m.getM() && y < index+yLen; ++y) {
+                data.get(y-index).add(m.get(x, y));
+            }
+        }
     }
 
     public void assign(Matrix m) {
@@ -138,6 +160,20 @@ public class Matrix implements Serializable {
             for(int y = 0; y < M; ++y) {
                 set(x, y, 0);
             }
+        }
+    }
+
+    public void fill(int yFrom, Matrix m) {
+        for(int y = yFrom; y < yFrom+m.getM(); ++y) {
+            for(int x = 0; x < N; ++x) {
+                set(x, y, m.get(x, y-yFrom));
+            }
+        }
+    }
+
+    public void fill(int yFrom, List<Double> inputs) {
+        for(int y = yFrom; y < yFrom+inputs.size(); ++y) {
+            set(0, y, inputs.get(y-yFrom));
         }
     }
 
@@ -399,13 +435,15 @@ public class Matrix implements Serializable {
         while(y < M) {
             if(y == index) {
                 shift = -1;
-                continue;
             }
-            for (int x = 0; x < N; ++x) {
-                m.set(x, y + shift, get(x, y));
+            else {
+                for (int x = 0; x < N; ++x) {
+                    m.set(x, y + shift, get(x, y));
+                }
             }
             ++y;
         }
+        assign(m);
     }
 
     public Matrix getInverse() {

@@ -1,25 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="634.0" prefWidth="823.0" style="-fx-border-color: gray;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mralexeimk.objector.controllers.SettingsController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="634.0" prefWidth="823.0" style="-fx-border-color: gray;" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mralexeimk.objector.controllers.SettingsController">
    <children>
       <Label layoutX="329.0" layoutY="14.0" text="НАСТРОЙКИ" textAlignment="CENTER">
          <font>
             <Font size="28.0" />
          </font>
       </Label>
-      <CheckBox fx:id="rewrite" layoutX="34.0" layoutY="91.0" mnemonicParsing="false" prefHeight="20.0" prefWidth="285.0" text="Пересоздавать веса при добавлении объекта" />
-      <Label layoutX="530.0" layoutY="92.0" text="Конфигурация нейросети при создании" />
+      <CheckBox fx:id="rewrite" layoutX="34.0" layoutY="91.0" mnemonicParsing="false" prefHeight="20.0" prefWidth="285.0" text="Пересоздавать веса при добавлении объекта">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor></CheckBox>
+      <Label layoutX="530.0" layoutY="92.0" text="Конфигурация нейросети при создании" textAlignment="CENTER" underline="true" />
       <TextArea fx:id="configuration" layoutX="538.0" layoutY="123.0" prefHeight="200.0" prefWidth="200.0" />
-      <CheckBox fx:id="onlyMoving" layoutX="34.0" layoutY="123.0" mnemonicParsing="false" prefHeight="20.0" prefWidth="285.0" selected="true" text="Обучать только на движущихся объектах" />
-      <TextField fx:id="webCamWeight" alignment="CENTER_RIGHT" layoutX="563.0" layoutY="439.0" prefHeight="26.0" prefWidth="58.0" promptText="160" />
-      <TextField fx:id="webCamHeight" layoutX="646.0" layoutY="439.0" prefHeight="26.0" prefWidth="58.0" promptText="90" />
-      <Label layoutX="631.0" layoutY="443.0" text="x" />
-      <Label layoutX="565.0" layoutY="415.0" text="Разрешение веб-камеры" />
-      <TextField fx:id="lr" alignment="CENTER" layoutX="560.0" layoutY="367.0" promptText="0.1" />
-      <Label layoutX="568.0" layoutY="340.0" text="Коэффициент обучения" />
+      <CheckBox fx:id="onlyMoving" layoutX="34.0" layoutY="123.0" mnemonicParsing="false" prefHeight="20.0" prefWidth="285.0" selected="false" text="Обучать только на движущихся объектах">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor></CheckBox>
+      <TextField fx:id="webCamWeight" alignment="CENTER_RIGHT" layoutX="567.0" layoutY="504.0" prefHeight="26.0" prefWidth="58.0" promptText="160" />
+      <TextField fx:id="webCamHeight" layoutX="650.0" layoutY="504.0" prefHeight="26.0" prefWidth="58.0" promptText="90" />
+      <Label layoutX="635.0" layoutY="508.0" text="x" />
+      <Label layoutX="569.0" layoutY="480.0" text="Разрешение веб-камеры" />
+      <TextField fx:id="lr" alignment="CENTER" layoutX="564.0" layoutY="432.0" promptText="0.1" />
+      <Label layoutX="572.0" layoutY="405.0" text="Коэффициент обучения" />
+      <CheckBox fx:id="detectColors" layoutX="497.0" layoutY="554.0" mnemonicParsing="false" onAction="#detectColorsAction" prefHeight="20.0" prefWidth="286.0" text="Распознавание цветов (в 3 раза больше весов)">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor></CheckBox>
+      <ChoiceBox fx:id="configs" layoutX="565.0" layoutY="357.0" onAction="#selectConfig" prefWidth="150.0" />
+      <Label layoutX="599.0" layoutY="332.0" text="Конфигурации:" />
    </children>
 </AnchorPane>

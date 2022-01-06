@@ -14,30 +14,31 @@ public class NeuralNetwork implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String id = "";
-    private List<Layer> layers;
+    private List<List<Layer>> layers;
     private double lr;
     private List<String> objects = new ArrayList<>();
 
     private final String defaultId = "default";
     private final List<String> defaultObjects = new ArrayList<>(List.of("Nothing"));
 
-    public NeuralNetwork(String id, List<Layer> layers, double lr, List<String> objects) {
+    public NeuralNetwork(String id, List<List<Layer>> layers, double lr, List<String> objects) {
         load(id, layers, lr, objects);
     }
 
-    public NeuralNetwork(List<Layer> layers, double lr) {
+    public NeuralNetwork(List<List<Layer>> layers, double lr) {
         load(defaultId, layers, lr, defaultObjects);
         init();
     }
 
     public NeuralNetwork(double lr) {
-        this.layers = SettingsListener.get().getConfigurationLayers();
+        this.layers = new ArrayList<>(SettingsListener.get().getConfigurationLayers());
         this.lr = lr;
         init();
     }
 
     public NeuralNetwork() {
-        load(defaultId, SettingsListener.get().getConfigurationLayers(), SettingsListener.get().getLr(), defaultObjects);
+        load(defaultId,
+                new ArrayList<>(SettingsListener.get().getConfigurationLayers()), SettingsListener.get().getLr(), defaultObjects);
         init();
     }
 
@@ -49,7 +50,7 @@ public class NeuralNetwork implements Serializable {
         loadWeights(id);
     }
 
-    public void load(String id, List<Layer> layers, double lr, List<String> objects) {
+    public void load(String id, List<List<Layer>> layers, double lr, List<String> objects) {
         this.id = id;
         this.layers = layers;
         this.lr = lr;
@@ -58,10 +59,14 @@ public class NeuralNetwork implements Serializable {
 
     public void init() {
         for(int i = 0; i < layers.size(); ++i) {
-            if(i+1 < layers.size()) {
-                layers.get(i).setNextLayer(layers.get(i + 1));
+            for(int j = 0; j < layers.get(i).size(); ++j) {
+                if (i + 1 < layers.size()) {
+                    int v = j;
+                    if(j >= layers.get(i+1).size()) v = 0;
+                    layers.get(i).get(j).setNextLayer(layers.get(i + 1).get(v));
+                }
+                layers.get(i).get(j).toDefault();
             }
-            layers.get(i).toDefault();
         }
     }
 
@@ -70,14 +75,14 @@ public class NeuralNetwork implements Serializable {
         int units = getOutputLayer().getUnits();
         layers.remove(layers.size()-1);
         OutputLayer ol = new OutputLayer(units+1, 1, LayerType.OUTPUT);
-        layers.add(ol);
-        if(layers.get(layers.size()-2) instanceof NeuronsLayer nl) {
-            layers.get(layers.size()-2).setNextLayer(ol);
+        layers.add(new ArrayList<>(List.of(ol)));
+        if(layers.get(layers.size()-2).get(0) instanceof NeuronsLayer) {
+            layers.get(layers.size()-2).get(0).setNextLayer(ol);
             if(SettingsListener.get().isRewriteWeights()) {
-                layers.get(layers.size()-2).toDefault();
+                layers.get(layers.size()-2).get(0).toDefault();
             }
             else {
-                layers.get(layers.size()-2).addRow();
+                layers.get(layers.size()-2).get(0).addRow();
             }
         }
         saveWeights(id);
@@ -93,92 +98,107 @@ public class NeuralNetwork implements Serializable {
         int units = getOutputLayer().getUnits();
         layers.remove(layers.size()-1);
         OutputLayer ol = new OutputLayer(units-1, 1, LayerType.OUTPUT);
-        layers.add(ol);
-        if(layers.get(layers.size()-2) instanceof NeuronsLayer) {
-            layers.get(layers.size()-2).setNextLayer(ol);
+        layers.add(new ArrayList<>(List.of(ol)));
+        if(layers.get(layers.size()-2).get(0) instanceof NeuronsLayer) {
+            layers.get(layers.size()-2).get(0).setNextLayer(ol);
             if(SettingsListener.get().isRewriteWeights()) {
-                layers.get(layers.size()-2).toDefault();
+                layers.get(layers.size()-2).get(0).toDefault();
             }
             else {
-                layers.get(layers.size()-2).removeRow(index);
+                layers.get(layers.size()-2).get(0).removeRow(index);
             }
         }
         saveWeights(id);
+    }
+
+    public boolean isSeveralInputs() {
+        return layers.get(0).size() > 1;
     }
 
     public double getLearningRate() {
         return lr;
     }
 
-    public List<Layer> getLayers() {
+    public List<List<Layer>> getLayers() {
         return layers;
     }
 
     public String getConfiguration() {
         String res = "";
-        for(Layer layer : layers) {
-            res += layer.toString() + "\n";
+        for(List<Layer> list : layers) {
+            for(int i = 0; i < list.size(); ++i) {
+                Layer layer = list.get(i);
+                res += layer.toString();
+                if(i < list.size()-1) res += " + ";
+            }
+            res += "\n";
         }
         return res;
     }
 
-    public void setInputLayerData(List<Double> data) {
-        getInputLayer().setData(data);
+    public void setInputLayerData(List<List<Double>> data) {
+        for(int i = 0; i < data.size(); ++i) {
+            getInputLayer(i).setData(data.get(i));
+        }
     }
 
-    public InputLayer getInputLayer() {
-        return (InputLayer) layers.get(0);
+    public InputLayer getInputLayer(int index) {
+        return (InputLayer) layers.get(0).get(index);
     }
 
     public OutputLayer getOutputLayer() {
-        return (OutputLayer) layers.get(layers.size()-1);
+        return (OutputLayer) layers.get(layers.size()-1).get(0);
     }
 
     public void printWeights() {
-        for(Layer layer : getLayers()) {
+        for (List<Layer> layerList : layers) {
+            Layer layer = layerList.get(0);
             System.out.println(layer.toString());
-            if(layer instanceof InputLayer il) {
-                for(Matrix m : il.getW()) m.print();
-            }
-            else if(layer instanceof PullingLayer pl) {
-                for(List<Matrix> mm : pl.getW()) {
-                    for(Matrix m : mm) {
+            if (layer instanceof InputLayer il) {
+                for (Matrix m : il.getW()) m.print();
+            } else if (layer instanceof PullingLayer pl) {
+                for (List<Matrix> mm : pl.getW()) {
+                    for (Matrix m : mm) {
                         m.print();
                     }
                 }
-            }
-            else if(layer instanceof NeuronsLayer nl) {
-                if(nl.getW() != null) nl.getW().print();
+            } else if (layer instanceof NeuronsLayer nl) {
+                if (nl.getW() != null) nl.getW().print();
             }
         }
     }
 
     public void printData() {
-        for(Layer layer : layers) {
+        for (List<Layer> layerList : layers) {
+            Layer layer = layerList.get(0);
             System.out.println(layer.toString());
-            if(layer instanceof InputLayer il) {
+            if (layer instanceof InputLayer il) {
                 il.getData().print();
-            }
-            else if(layer instanceof FilterLayer fl) {
-                for(Matrix m : fl.getData()) {
+            } else if (layer instanceof FilterLayer fl) {
+                for (Matrix m : fl.getData()) {
                     m.print();
                 }
-            }
-            else if(layer instanceof PullingLayer pl) {
-                for(Matrix m : pl.getData()) {
+            } else if (layer instanceof PullingLayer pl) {
+                for (Matrix m : pl.getData()) {
                     m.print();
                 }
-            }
-            else if(layer instanceof NeuronsLayer nl) {
+            } else if (layer instanceof NeuronsLayer nl) {
                 System.out.println(nl.getData());
-            }
-            else if(layer instanceof OutputLayer ol) {
+            } else if (layer instanceof OutputLayer ol) {
                 System.out.println(ol.getData());
             }
         }
     }
 
-    public void train(List<Double> input_list, String objectId) {
+    public void evaluate() {
+        for (List<Layer> layerList : layers) {
+            for (Layer layer : layerList) {
+                layer.evaluate();
+            }
+        }
+    }
+
+    public void train(List<List<Double>> input_list, String objectId) {
         if(objects.contains(objectId)) {
             List<Double> target_list = new ArrayList<>(Collections.nCopies(objects.size(), 0.01));
             int index = 0;
@@ -193,131 +213,122 @@ public class NeuralNetwork implements Serializable {
         }
     }
 
-    public synchronized void train(List<Double> input_list, List<Double> target_list) {
+    public synchronized void train(List<List<Double>> input_list, List<Double> target_list) {
         setInputLayerData(input_list);
-        for(Layer layer : getLayers()) {
-            layer.evaluate();
-        }
+        evaluate();
         Matrix outputs = new Matrix(getOutputLayer().getData());
         Matrix targets = new Matrix(target_list);
         Matrix errors = targets.minus(outputs);
+        List<Double> changedErrors = new ArrayList<>();
         for(int i = layers.size()-2; i >= 0; --i) {
-            Layer layer = getLayers().get(i);
-            Layer nextLayer = layer.getNextLayer();
-            if(layer instanceof NeuronsLayer nl) {
-                Matrix I = new Matrix(nl.getData());
-                Matrix O = null;
-                if(nextLayer instanceof OutputLayer) {
-                    O = new Matrix(outputs);
-                }
-                else if(nextLayer instanceof NeuronsLayer nl2) {
-                    O = new Matrix(nl2.getData());
-                }
-                if(O != null) {
-                    Matrix dif = errors
-                            .multiply(O)
-                            .multiply(O.getNegative().sum(1))
-                            .multiply(I.getTranspose())
-                            .multiply(lr);
-                    nl.setW(nl.getW().sum(dif));
-                    errors = nl.getW().getTranspose().multiply(errors);
-                }
-            }
-            else if(layer instanceof PullingLayer pl) {
-                if(nextLayer instanceof FilterLayer fl) {
-                    int connections = fl.getUnits()/pl.getUnits();
-                    List<Double> new_errors = new ArrayList<>();
-                    int lenErrorsPerConnect = errors.getM()/(pl.getUnits()*connections);
-                    for(int unit = 0; unit < pl.getUnits(); ++unit) {
-                        double average = 0;
-                        Matrix I = pl.getData().get(unit);
-                        for(int kernel = 0; kernel < connections; ++kernel) {
-                            int val = unit*connections + kernel;
-                            Matrix O = fl.getData().get(val);
-                            Matrix K = pl.getWW(unit, kernel);
-                            List<Double> errorList = new ArrayList<>();
-                            for(int e = val*lenErrorsPerConnect; e < lenErrorsPerConnect+val*lenErrorsPerConnect; ++e) {
-                                errorList.add(errors.get(0, e));
+            int len = layers.get(i).size();
+            for(int j = 0; j < len; ++j) {
+                Layer layer = layers.get(i).get(j);
+                Layer nextLayer = layer.getNextLayer();
+                if (layer instanceof NeuronsLayer nl) {
+                    Matrix I = new Matrix(nl.getData());
+                    Matrix O = null;
+                    if (nextLayer instanceof OutputLayer) {
+                        O = new Matrix(outputs);
+                    } else if (nextLayer instanceof NeuronsLayer nl2) {
+                        O = new Matrix(nl2.getData());
+                    }
+                    if (O != null) {
+                        Matrix dif = errors
+                                .multiply(O)
+                                .multiply(O.getNegative().sum(1))
+                                .multiply(I.getTranspose())
+                                .multiply(lr);
+                        nl.setW(nl.getW().sum(dif));
+                        errors = nl.getW().getTranspose().multiply(errors);
+                    }
+                } else if (layer instanceof PullingLayer pl) {
+                    if (nextLayer instanceof FilterLayer fl) {
+                        int connections = fl.getUnits() / pl.getUnits();
+                        Matrix currentErrors = new Matrix(errors, j*(errors.getM()/len), errors.getM()/len);
+                        int lenErrorsPerConnect = currentErrors.getM() / (pl.getUnits() * connections);
+                        for (int unit = 0; unit < pl.getUnits(); ++unit) {
+                            double average = 0;
+                            Matrix I = pl.getData().get(unit);
+                            for (int kernel = 0; kernel < connections; ++kernel) {
+                                int val = unit * connections + kernel;
+                                Matrix O = fl.getData().get(val);
+                                Matrix K = pl.getWW(unit, kernel);
+                                List<Double> errorList = new ArrayList<>();
+                                for (int e = val * lenErrorsPerConnect; e < lenErrorsPerConnect + val * lenErrorsPerConnect; ++e) {
+                                    errorList.add(currentErrors.get(0, e));
+                                }
+                                for (int e = 0; e < errorList.size(); ++e) {
+                                    double error = errorList.get(e);
+                                    average += error;
+                                    for (Pair<Integer, Integer> pair : O.getSquare(fl.getK(), e)) {
+                                        double outputValue = O.get(pair.getFirst(), pair.getSecond());
+                                        for (int y = pair.getSecond(); y < pair.getSecond() + K.getM(); ++y) {
+                                            for (int x = pair.getFirst(); x < pair.getFirst() + K.getN(); ++x) {
+                                                double inputValue = I.get(x, y);
+                                                int kX = x - pair.getFirst();
+                                                int kY = y - pair.getSecond();
+                                                K.set(kX, kY, K.get(kX, kY) + lr * outputValue * (1 - outputValue) * inputValue * error);
+                                            }
+                                        }
+                                    }
+                                }
+                                pl.setWW(unit, kernel, K);
                             }
-                            for(int e = 0; e < errorList.size(); ++e) {
-                                double error = errorList.get(e);
-                                average += error;
-                                for(Pair<Integer, Integer> pair : O.getSquare(fl.getK(), e)) {
-                                    double outputValue = O.get(pair.getFirst(), pair.getSecond());
-                                    for(int y = pair.getSecond(); y < pair.getSecond()+K.getM(); ++y) {
-                                        for(int x = pair.getFirst(); x < pair.getFirst()+K.getN(); ++x) {
-                                            double inputValue = I.get(x, y);
-                                            int kX = x-pair.getFirst();
-                                            int kY = y-pair.getSecond();
-                                            K.set(kX, kY, K.get(kX, kY) + lr*outputValue*(1-outputValue)*inputValue*error);
+                            average /= (connections * lenErrorsPerConnect);
+                            changedErrors.add(average);
+                        }
+                        if(j == len-1) {
+                            errors = new Matrix(changedErrors);
+                            changedErrors.clear();
+                        }
+                    }
+                } else if (layer instanceof InputLayer il) {
+                    Matrix IVector = new Matrix(il.getData().toList());
+                    Matrix I = il.getData();
+                    Matrix currentErrors = new Matrix(errors, j*(errors.getM()/len), errors.getM()/len);
+                    if (nextLayer instanceof FilterLayer fl) {
+                        int connections = fl.getUnits();
+                        for (int kernel = 0; kernel < connections; ++kernel) {
+                            Matrix O = fl.getData().get(kernel);
+                            Matrix K = il.getW().get(kernel);
+                            double error = currentErrors.get(0, kernel);
+                            for (int y = 0; y < O.getM(); ++y) {
+                                for (int x = 0; x < O.getN(); ++x) {
+                                    double outputValue = O.get(x, y);
+                                    for (int y1 = y; y1 < y + K.getM(); ++y1) {
+                                        for (int x1 = x; x1 < x + K.getN(); ++x1) {
+                                            double inputValue = I.get(x1, y1);
+                                            int kX = x1 - x;
+                                            int kY = y1 - y;
+                                            K.set(kX, kY, K.get(kX, kY) + lr * outputValue * (1 - outputValue) * inputValue * error);
                                         }
                                     }
                                 }
                             }
-                            pl.setWW(unit, kernel, K);
+                            il.setW(kernel, K);
                         }
-                        average /= (connections * lenErrorsPerConnect);
-                        new_errors.add(average);
+                    } else if (nextLayer instanceof NeuronsLayer nl) {
+                        Matrix O = new Matrix(nl.getData());
+                        Matrix dif = currentErrors
+                                .multiply(O)
+                                .multiply(O.getNegative().sum(1))
+                                .multiply(IVector.getTranspose())
+                                .multiply(lr);
+                        nl.setW(nl.getW().sum(dif));
                     }
-                    errors = new Matrix(new_errors);
-                }
-            }
-            else if(layer instanceof InputLayer il) {
-                Matrix IVector = new Matrix(il.getData().toList());
-                Matrix I = il.getData();
-                if(nextLayer instanceof FilterLayer fl) {
-                    int connections = fl.getUnits();
-                    for(int kernel = 0; kernel < connections; ++kernel) {
-                        Matrix O = fl.getData().get(kernel);
-                        Matrix K = il.getW().get(kernel);
-                        double error = errors.get(0, kernel);
-                        for(int y = 0; y < O.getM(); ++y) {
-                            for(int x = 0; x < O.getN(); ++x) {
-                                double outputValue = O.get(x, y);
-                                for(int y1 = y; y1 < y+K.getM(); ++y1) {
-                                    for(int x1 = x; x1 < x+K.getN(); ++x1) {
-                                        double inputValue = I.get(x1, y1);
-                                        int kX = x1-x;
-                                        int kY = y1-y;
-                                        K.set(kX, kY, K.get(kX, kY) + lr*outputValue*(1-outputValue)*inputValue*error);
-                                    }
-                                }
-                            }
-                        }
-                        il.setW(kernel, K);
-                    }
-                }
-                else if(nextLayer instanceof NeuronsLayer nl) {
-                    Matrix O = new Matrix(nl.getData());
-                    Matrix dif = errors
-                            .multiply(O)
-                            .multiply(O.getNegative().sum(1))
-                            .multiply(IVector.getTranspose())
-                            .multiply(lr);
-                    nl.setW(nl.getW().sum(dif));
-                    errors = nl.getW().getTranspose().multiply(errors);
                 }
             }
         }
     }
 
-    public void train(Matrix inputs, Matrix targets) {
-        train(inputs.toList(), targets.toList());
-    }
-
-    public List<Double> query(List<Double> input_list) {
+    public List<Double> query(List<List<Double>> input_list) {
         setInputLayerData(input_list);
-        for(Layer layer : getLayers()) {
-            layer.evaluate();
-        }
+        evaluate();
         return getOutputLayer().getData();
     }
 
-    public List<Double> query(Matrix inputs) {
-        return query(inputs.toList());
-    }
-
-    public int queryMax(List<Double> input_list) {
+    public int queryMax(List<List<Double>> input_list) {
         List<Double> list = query(input_list);
         int res = 0;
         double max = 0;
@@ -330,7 +341,7 @@ public class NeuralNetwork implements Serializable {
         return res;
     }
 
-    public Pair<String, Double> queryMaxPair(List<Double> input_list) {
+    public Pair<String, Double> queryMaxPair(List<List<Double>> input_list) {
         List<Double> list = query(input_list);
         int res = 0;
         double max = 0;
@@ -361,7 +372,7 @@ public class NeuralNetwork implements Serializable {
                 }
                 List<Double> targets = new ArrayList<>(Collections.nCopies(getOutputLayer().getUnits(), 0.01));
                 targets.set(target, 0.99);
-                train(inputs, targets);
+                train(new ArrayList<>(List.of(inputs)), targets);
                 ++j;
                 System.out.println(j);
             }
@@ -390,7 +401,7 @@ public class NeuralNetwork implements Serializable {
                     t = (t/255.0)*0.99 + 0.01;
                     inputs.add(t);
                 }
-                int target = queryMax(inputs);
+                int target = queryMax(new ArrayList<>(List.of(inputs)));
                 System.out.println("Correct: " + correct + ", Output: " + target);
                 if(correct == target) ++count_correct;
             }
@@ -402,7 +413,7 @@ public class NeuralNetwork implements Serializable {
     }
 
     public void toDefault() {
-        load(defaultId, SettingsListener.get().getConfigurationLayers(), SettingsListener.get().getLr(), defaultObjects);
+        load(defaultId, new ArrayList<>(SettingsListener.get().getConfigurationLayers()), SettingsListener.get().getLr(), defaultObjects);
         init();
     }
 
