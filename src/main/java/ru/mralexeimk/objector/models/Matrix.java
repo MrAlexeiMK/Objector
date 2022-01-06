@@ -61,7 +61,7 @@ public class Matrix implements Serializable {
         M = vector.size();
         data = new ArrayList<>();
         for(int y = 0; y < M; ++y) {
-            data.add(new ArrayList<>(Arrays.asList(vector.get(y))));
+            data.add(new ArrayList<>(List.of(vector.get(y))));
         }
     }
 

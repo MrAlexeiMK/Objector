@@ -12,10 +12,13 @@ import java.util.List;
 @Data
 public class Settings implements Serializable {
     private boolean rewriteWeights;
-    private Pair<Integer, Integer> webCamQuality;
+    private Pair<Integer, Integer> webCamQualityTrain;
+    private Pair<Integer, Integer> webCamQualityQuery;
     private boolean onlyMoving, detectColors;
     private List<List<Layer>> configuration;
     private double lr;
+    private boolean severalObjects;
+    private int exampleSelected;
 
     public Settings() {
         loadFromFile();
@@ -29,8 +32,10 @@ public class Settings implements Serializable {
         this.rewriteWeights = settings.rewriteWeights;
         this.configuration = settings.configuration;
         this.onlyMoving = settings.onlyMoving;
-        this.webCamQuality = settings.webCamQuality;
+        this.webCamQualityTrain = settings.webCamQualityTrain;
+        this.webCamQualityQuery = settings.webCamQualityQuery;
         this.detectColors = settings.detectColors;
+        this.severalObjects = settings.severalObjects;
         this.lr = settings.lr;
     }
 
@@ -38,8 +43,11 @@ public class Settings implements Serializable {
         rewriteWeights = false;
         onlyMoving = false;
         detectColors = false;
-        webCamQuality = new Pair<>(160, 90);
+        severalObjects = false;
+        webCamQualityTrain = new Pair<>(160, 90);
+        webCamQualityQuery = new Pair<>(160, 90);
         lr = 0.1;
+        exampleSelected = 1;
         toDefaultConfiguration();
     }
 
@@ -96,36 +104,49 @@ public class Settings implements Serializable {
     }
 
     public void selectConfiguration(int index) {
+        setExampleSelected(index);
         switch (index) {
             case 0:
                 chooseConv(false);
-                webCamQuality = new Pair<>(160, 90);
+                webCamQualityTrain = new Pair<>(160, 90);
+                webCamQualityQuery = new Pair<>(160, 90);
                 detectColors = false;
+                severalObjects = false;
                 break;
             case 1:
                 chooseConv(true);
-                webCamQuality = new Pair<>(160, 90);
+                webCamQualityTrain = new Pair<>(160, 90);
+                webCamQualityQuery = new Pair<>(160, 90);
                 detectColors = true;
+                severalObjects = false;
                 break;
             case 2:
                 chooseDefault(false);
-                webCamQuality = new Pair<>(160, 90);
+                webCamQualityTrain = new Pair<>(160, 90);
+                webCamQualityQuery = new Pair<>(160, 90);
                 detectColors = false;
+                severalObjects = false;
                 break;
             case 3:
                 chooseDefault(true);
-                webCamQuality = new Pair<>(160, 90);
+                webCamQualityTrain = new Pair<>(160, 90);
+                webCamQualityQuery = new Pair<>(160, 90);
                 detectColors = true;
+                severalObjects = false;
                 break;
             case 4:
                 chooseConv(false);
-                webCamQuality = new Pair<>(480, 270);
+                webCamQualityTrain = new Pair<>(180, 180);
+                webCamQualityQuery = new Pair<>(1440, 810);
                 detectColors = false;
+                severalObjects = true;
                 break;
             case 5:
                 chooseConv(true);
-                webCamQuality = new Pair<>(480, 270);
+                webCamQualityTrain = new Pair<>(180, 180);
+                webCamQualityQuery = new Pair<>(1440, 810);
                 detectColors = true;
+                severalObjects = true;
                 break;
         }
     }

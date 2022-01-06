@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.Cursor?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="634.0" prefWidth="823.0" style="-fx-border-color: gray;" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mralexeimk.objector.controllers.SettingsController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="681.0" prefWidth="802.0" style="-fx-border-color: gray;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mralexeimk.objector.controllers.SettingsController">
    <children>
       <Label layoutX="329.0" layoutY="14.0" text="НАСТРОЙКИ" textAlignment="CENTER">
          <font>
@@ -26,17 +22,27 @@
          <cursor>
             <Cursor fx:constant="HAND" />
          </cursor></CheckBox>
-      <TextField fx:id="webCamWeight" alignment="CENTER_RIGHT" layoutX="567.0" layoutY="504.0" prefHeight="26.0" prefWidth="58.0" promptText="160" />
-      <TextField fx:id="webCamHeight" layoutX="650.0" layoutY="504.0" prefHeight="26.0" prefWidth="58.0" promptText="90" />
-      <Label layoutX="635.0" layoutY="508.0" text="x" />
+      <TextField fx:id="trainWeight" alignment="CENTER_RIGHT" layoutX="509.0" layoutY="524.0" prefHeight="26.0" prefWidth="42.0" promptText="160" />
+      <TextField fx:id="trainHeight" layoutX="576.0" layoutY="524.0" prefHeight="26.0" prefWidth="42.0" promptText="90" />
+      <Label layoutX="561.0" layoutY="528.0" text="x" />
       <Label layoutX="569.0" layoutY="480.0" text="Разрешение веб-камеры" />
       <TextField fx:id="lr" alignment="CENTER" layoutX="564.0" layoutY="432.0" promptText="0.1" />
       <Label layoutX="572.0" layoutY="405.0" text="Коэффициент обучения" />
-      <CheckBox fx:id="detectColors" layoutX="497.0" layoutY="554.0" mnemonicParsing="false" onAction="#detectColorsAction" prefHeight="20.0" prefWidth="286.0" text="Распознавание цветов (в 3 раза больше весов)">
+      <CheckBox fx:id="detectColors" layoutX="33.0" layoutY="156.0" mnemonicParsing="false" onAction="#detectColorsAction" prefHeight="20.0" prefWidth="286.0" text="Распознавание цветов (в 3 раза больше весов)">
          <cursor>
             <Cursor fx:constant="HAND" />
          </cursor></CheckBox>
       <ChoiceBox fx:id="configs" layoutX="565.0" layoutY="357.0" onAction="#selectConfig" prefWidth="150.0" />
       <Label layoutX="599.0" layoutY="332.0" text="Конфигурации:" />
+      <TextField fx:id="queryWeight" alignment="CENTER_RIGHT" layoutX="668.0" layoutY="524.0" prefHeight="26.0" prefWidth="42.0" promptText="160" />
+      <TextField fx:id="queryHeight" layoutX="735.0" layoutY="524.0" prefHeight="26.0" prefWidth="42.0" promptText="90" />
+      <Label layoutX="720.0" layoutY="528.0" text="x" />
+      <Label layoutX="524.0" layoutY="506.0" text="При обучении" />
+      <Label layoutX="667.0" layoutY="506.0" text="При распознавании" />
+      <CheckBox fx:id="severalObjects" layoutX="33.0" layoutY="188.0" mnemonicParsing="false" onAction="#detectColorsAction" prefHeight="20.0" prefWidth="286.0" text="Распознавание нескольких объектов">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor>
+      </CheckBox>
    </children>
 </AnchorPane>

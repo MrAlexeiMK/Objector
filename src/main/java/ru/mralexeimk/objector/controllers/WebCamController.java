@@ -3,6 +3,7 @@ package ru.mralexeimk.objector.controllers;
 import com.github.sarxos.webcam.Webcam;
 import com.sun.speech.freetts.Voice;
 import com.sun.speech.freetts.VoiceManager;
+import eu.hansolo.tilesfx.colors.ColorSkin;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -13,6 +14,7 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.*;
@@ -20,12 +22,16 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import ru.mralexeimk.objector.other.Pair;
 import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 import ru.mralexeimk.objector.other.WebCamState;
 import ru.mralexeimk.objector.singletons.SettingsListener;
+import ru.mralexeimk.objector.other.Rectangle;
 
+import javax.swing.plaf.synth.ColorType;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
@@ -80,6 +86,10 @@ public class WebCamController implements Initializable {
         else {
             queueLabel.setVisible(false);
             header.setText("");
+        }
+        if(SettingsListener.get().isSeveralObjects()) {
+            header.setText("");
+            header.setVisible(false);
         }
     }
 
@@ -247,24 +257,66 @@ public class WebCamController implements Initializable {
                         if ((grabbedImage = selWebCam.getImage()) != null) {
                             if(!stopCamera) {
                                 BufferedImage finalPredImage = predImage;
-                                grabbedImage = NeuralNetworkListener.resize(grabbedImage,
-                                        SettingsListener.get().getWebCamQuality().getFirst(),
-                                        SettingsListener.get().getWebCamQuality().getSecond());
+                                if(state == WebCamState.TRAIN) {
+                                    double K = (double)SettingsListener.get().getWebCamQualityQuery().getFirst()
+                                            /SettingsListener.get().getWebCamQualityQuery().getSecond();
+                                    int guessWidth = (int) (SettingsListener.get().getWebCamQualityTrain().getSecond()*K);
+                                    int width = SettingsListener.get().getWebCamQualityTrain().getFirst();
+                                    int height = SettingsListener.get().getWebCamQualityTrain().getSecond();
+                                    grabbedImage = NeuralNetworkListener.resize(grabbedImage,
+                                            guessWidth,
+                                            height);
+                                    if(guessWidth > width) {
+                                        int crop = (guessWidth-width)/2;
+                                        grabbedImage = NeuralNetworkListener.cropImage(grabbedImage, crop, 0, width, height);
+                                    }
+                                    grabbedImage = NeuralNetworkListener.resize(grabbedImage,
+                                            width,
+                                            height);
+                                }
+                                else if(state == WebCamState.QUERY) {
+                                    grabbedImage = NeuralNetworkListener.resize(grabbedImage,
+                                            SettingsListener.get().getWebCamQualityQuery().getFirst(),
+                                            SettingsListener.get().getWebCamQualityQuery().getSecond());
+                                }
                                 Platform.runLater(() -> {
                                     if (finalPredImage != null && grabbedImage != null) {
                                         if(SettingsListener.get().isOnlyMoving()) grabbedImage = convert(finalPredImage, grabbedImage);
-                                        List<List<Double>> input = NeuralNetworkListener.parseImage(grabbedImage,
-                                                NeuralNetworkListener.get().getInputLayer(0).getSize(),
-                                                NeuralNetworkListener.get().getInputLayer(0).getSize());
                                         if (state == WebCamState.TRAIN) {
+                                            List<List<Double>> input = NeuralNetworkListener.parseImage(grabbedImage,
+                                                    NeuralNetworkListener.get().getInputLayer(0).getSize());
                                             trainingData.add(new Pair<>(input, object.getValue().toString()));
                                             NeuralNetworkListener.increaseQueueCount();
                                             queueLabel.setText("В очереди: " + NeuralNetworkListener.getQueueCount());
                                         } else if (state == WebCamState.QUERY) {
-                                            NeuralNetworkListener.threadQuery(input);
-                                            Pair<String, Double> res = NeuralNetworkListener.getQueryResult();
-                                            if (res != null) {
-                                                header.setText(res.getFirst() + ", " + Math.round(res.getSecond() * 100) / 100.0);
+                                            if(SettingsListener.get().isSeveralObjects()) {
+                                                NeuralNetworkListener.threadQuerySeveralObjects(grabbedImage,
+                                                        SettingsListener.get().getWebCamQualityTrain().getSecond());
+                                                bpWebCamPaneHolder.getChildren().removeIf(node -> node instanceof Text);
+                                                bpWebCamPaneHolder.getChildren().removeIf(node -> node instanceof javafx.scene.shape.Rectangle);
+                                                for(Rectangle rec : NeuralNetworkListener.getRectangles()) {
+                                                    javafx.scene.shape.Rectangle rectangle = new javafx.scene.shape.Rectangle(
+                                                            rec.getX(), rec.getY(),
+                                                            rec.getLenX(), rec.getLenY());
+                                                    rectangle.setFill(javafx.scene.paint.Color.TRANSPARENT);
+                                                    rectangle.setStroke(javafx.scene.paint.Color.BLACK);
+                                                    Text text = new Text(rec.getQueryRes().getFirst()+", "+
+                                                            Math.round(rec.getQueryRes().getSecond()*100)/100.0);
+                                                    text.setX(rec.getX());
+                                                    text.setY(rec.getY()-10);
+                                                    text.setFont(Font.font(10));
+                                                    bpWebCamPaneHolder.getChildren().add(rectangle);
+                                                    bpWebCamPaneHolder.getChildren().add(text);
+                                                }
+                                            }
+                                            else {
+                                                List<List<Double>> input = NeuralNetworkListener.parseImage(grabbedImage,
+                                                        NeuralNetworkListener.get().getInputLayer(0).getSize());
+                                                NeuralNetworkListener.threadQuery(input);
+                                                Pair<String, Double> res = NeuralNetworkListener.getQueryResult();
+                                                if (res != null) {
+                                                    header.setText(res.getFirst() + ", " + Math.round(res.getSecond() * 100) / 100.0);
+                                                }
                                             }
                                         }
                                     }

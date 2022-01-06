@@ -354,6 +354,17 @@ public class NeuralNetwork implements Serializable {
         return new Pair<>(objects.get(res), max);
     }
 
+    public List<Pair<String, Double>> queryPairs(List<List<Double>> input_list) {
+        List<Double> list = query(input_list);
+        List<Pair<String, Double>> res = new ArrayList<>();
+        for(int i = 0; i < list.size(); ++i) {
+            if(list.get(i) > 0.7) {
+                res.add(new Pair<>(objects.get(i), list.get(i)));
+            }
+        }
+        return res;
+    }
+
     public void trainFromFile(String path) {
         try {
             File file = new File(getClass().getResource(path).toURI());

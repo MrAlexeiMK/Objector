@@ -15,14 +15,16 @@ import java.util.List;
 public class SettingsController {
     public static boolean isOpen = false;
     @FXML
-    private CheckBox rewrite, onlyMoving, detectColors;
+    private CheckBox rewrite, onlyMoving, detectColors, severalObjects;
     @FXML
     private TextArea configuration;
     @FXML
-    private TextField webCamWeight, webCamHeight, lr;
+    private TextField trainHeight, trainWeight, queryHeight, queryWeight, lr;
     @FXML
     private ChoiceBox configs;
 
+
+    private boolean firstLoad = false;
     private static final List<String> configObjects =
             new ArrayList<>(List.of(
                     "Свёрточная (чёрно-белая)",
@@ -30,21 +32,31 @@ public class SettingsController {
                     "Обычная (чёрно-белая)",
                     "Обычная (цветная)",
                     "Расширенная (чёрно-белая)",
-                    "Расширенная (цветная)"
+                    "Расширенная (цветная)",
+                    "Пользовательская"
             ));
 
     @FXML
     public void initialize() {
+        firstLoad = true;
         configs.getItems().addAll(configObjects);
         configs.setValue(configs.getItems().get(0));
         isOpen = true;
         rewrite.setSelected(SettingsListener.get().isRewriteWeights());
         onlyMoving.setSelected(SettingsListener.get().isOnlyMoving());
-        detectColors.setSelected(SettingsListener.get().isDetectColors());
+        configs.setValue(configObjects.get(SettingsListener.get().getExampleSelected()));
+        updateConfigs();
+    }
+
+    public void updateConfigs() {
         configuration.setText(SettingsListener.get().getConfiguration());
         lr.setText(String.valueOf(SettingsListener.get().getLr()));
-        webCamWeight.setText(String.valueOf(SettingsListener.get().getWebCamQuality().getFirst()));
-        webCamHeight.setText(String.valueOf(SettingsListener.get().getWebCamQuality().getSecond()));
+        detectColors.setSelected(SettingsListener.get().isDetectColors());
+        severalObjects.setSelected(SettingsListener.get().isSeveralObjects());
+        queryWeight.setText(String.valueOf(SettingsListener.get().getWebCamQualityQuery().getFirst()));
+        queryHeight.setText(String.valueOf(SettingsListener.get().getWebCamQualityQuery().getSecond()));
+        trainWeight.setText(String.valueOf(SettingsListener.get().getWebCamQualityTrain().getFirst()));
+        trainHeight.setText(String.valueOf(SettingsListener.get().getWebCamQualityTrain().getSecond()));
     }
 
     @FXML
@@ -56,18 +68,19 @@ public class SettingsController {
 
     @FXML
     public void selectConfig() {
-        String config = configs.getValue().toString();
-        for(int i = 0; i < configObjects.size(); ++i) {
-            if(config.equals(configObjects.get(i))) {
-                SettingsListener.get().selectConfiguration(i);
-                configuration.setText(SettingsListener.get().getConfiguration());
-                detectColors.setSelected(SettingsListener.get().isDetectColors());
-                lr.setText(String.valueOf(SettingsListener.get().getLr()));
-                webCamWeight.setText(String.valueOf(SettingsListener.get().getWebCamQuality().getFirst()));
-                webCamHeight.setText(String.valueOf(SettingsListener.get().getWebCamQuality().getSecond()));
-                break;
+        if(!firstLoad) {
+            String config = configs.getValue().toString();
+            for (int i = 0; i < configObjects.size(); ++i) {
+                if (config.equals(configObjects.get(i))) {
+                    SettingsListener.get().selectConfiguration(i);
+                    if(i < configObjects.size()-1) {
+                        updateConfigs();
+                        break;
+                    }
+                }
             }
         }
+        else firstLoad = false;
     }
 
     public void close() {
@@ -76,13 +89,16 @@ public class SettingsController {
             SettingsListener.get().setOnlyMoving(onlyMoving.isSelected());
             SettingsListener.get().setLr(Double.parseDouble(lr.getText()));
             SettingsListener.get().setDetectColors(detectColors.isSelected());
+            SettingsListener.get().setSeveralObjects(severalObjects.isSelected());
             if (!SettingsListener.get().setConfiguration(configuration.getText())) {
                 SettingsListener.get().toDefaultConfiguration();
             }
-            SettingsListener.get().setWebCamQuality(new Pair<>(Integer.parseInt(webCamWeight.getText()),
-                    Integer.parseInt(webCamHeight.getText())));
+            SettingsListener.get().setWebCamQualityQuery(new Pair<>(Integer.parseInt(queryWeight.getText()),
+                    Integer.parseInt(queryHeight.getText())));
+            SettingsListener.get().setWebCamQualityTrain(new Pair<>(Integer.parseInt(trainWeight.getText()),
+                    Integer.parseInt(trainHeight.getText())));
             SettingsListener.save();
-        } catch (Exception ex) {}
+        } catch (Exception ignored) {}
         Stage stage = (Stage) rewrite.getScene().getWindow();
         stage.close();
         isOpen = false;
