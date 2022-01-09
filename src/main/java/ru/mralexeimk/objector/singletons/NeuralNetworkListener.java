@@ -30,6 +30,10 @@ public class NeuralNetworkListener {
         neuralNetwork = new NeuralNetwork(id);
     }
 
+    public static void setQueueCount(int count) {
+        queueCount = count;
+    }
+
     public static NeuralNetwork get() {
         return neuralNetwork;
     }

@@ -136,15 +136,15 @@ public class Settings implements Serializable {
                 break;
             case 4:
                 chooseConv(false);
-                webCamQualityTrain = new Pair<>(180, 180);
-                webCamQualityQuery = new Pair<>(1440, 810);
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = false;
                 severalObjects = true;
                 break;
             case 5:
                 chooseConv(true);
-                webCamQualityTrain = new Pair<>(180, 180);
-                webCamQualityQuery = new Pair<>(1440, 810);
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = true;
                 severalObjects = true;
                 break;

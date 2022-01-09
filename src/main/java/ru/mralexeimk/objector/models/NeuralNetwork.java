@@ -358,7 +358,7 @@ public class NeuralNetwork implements Serializable {
         List<Double> list = query(input_list);
         List<Pair<String, Double>> res = new ArrayList<>();
         for(int i = 0; i < list.size(); ++i) {
-            if(list.get(i) > 0.7) {
+            if(list.get(i) > 0.5) {
                 res.add(new Pair<>(objects.get(i), list.get(i)));
             }
         }
