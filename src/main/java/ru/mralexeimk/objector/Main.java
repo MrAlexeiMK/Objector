@@ -13,10 +13,10 @@ public class Main {
             List.of(new InputLayer(1, 28, 0, LayerType.INPUT)),
             List.of(new FilterLayer(8, 24, 0, LayerType.FILTER)),
             List.of(new PullingLayer(8, 12, 0, LayerType.PULLING)),
-            List.of(new FilterLayer(32, 8, 0, LayerType.FILTER)),
-            List.of(new PullingLayer(32, 4, 0, LayerType.PULLING)),
-            List.of(new NeuronsLayer(512, 1, LayerType.NEURONS)),
-            List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
+            List.of(new FilterLayer(16, 8, 0, LayerType.FILTER)),
+            List.of(new PullingLayer(16, 4, 0, LayerType.PULLING)),
+            List.of(new NeuronsLayer(256, 1, LayerType.NEURONS)),
+            List.of(new OutputLayer(10, 1, LayerType.OUTPUT))
     ));
 
     private static List<List<Layer>> layers2 = new ArrayList<>(Arrays.asList(
@@ -34,10 +34,10 @@ public class Main {
         NeuralNetwork nn = new NeuralNetwork(layers, 0.1);
         nn.printData();
         nn.printWeights();
-        for(int i = 0; i < 10; ++i) nn.trainFromFile("/train/mnist_train.csv");
+        for(int i = 0; i < 10; ++i) nn.trainFromFile("/train/mnist_train_100.csv");
         nn.printData();
         nn.printWeights();
-        nn.testFromFile("/test/mnist_test.csv");
+        nn.testFromFile("/test/mnist_test_10.csv");
         nn.saveWeights("mnist");
     }
 }

@@ -23,6 +23,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
@@ -35,11 +36,14 @@ import ru.mralexeimk.objector.other.WebCamState;
 import ru.mralexeimk.objector.singletons.SettingsListener;
 import ru.mralexeimk.objector.other.Rectangle;
 
+import javax.imageio.ImageIO;
 import javax.swing.plaf.synth.ColorType;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
@@ -65,7 +69,7 @@ public class WebCamController implements Initializable {
     @FXML
     private ImageView imgWebCamCapturedImage;
     @FXML
-    private Label queueLabel, header, error;
+    private Label queueLabel, header, error, log;
 
     private List<Pair<List<List<Double>>, String>> trainingData;
 
@@ -75,17 +79,16 @@ public class WebCamController implements Initializable {
     public static boolean isOpen = false;
     private static boolean stopTask = false;
     public WebCamState state = WebCamState.DEFAULT;
-    private final ObjectProperty<Image> imageProperty = new SimpleObjectProperty<Image>();
-    private boolean isSeveral = false;
+    private final ObjectProperty<Image> imageProperty = new SimpleObjectProperty<>();
     private Pair<Double, Double> lastPoint;
-    private Map<javafx.scene.paint.Color, String> objectByColor;
+    private Map<javafx.scene.shape.Rectangle, String> objectByRectangle;
+    private double xScale, yScale;
 
     @Override
     public void initialize(URL arg0, ResourceBundle arg1) {
         isOpen = true;
         lastPoint = new Pair<>(0.0, 0.0);
-        objectByColor = new HashMap<>();
-        isSeveral = SettingsListener.get().isSeveralObjects();
+        objectByRectangle = new HashMap<>();
         btnStartCamera.setDisable(true);
         btnStopCamera.setDisable(true);
         trainingData = new ArrayList<>();
@@ -109,6 +112,19 @@ public class WebCamController implements Initializable {
                 initializeWebCam(arg2.getWebCamIndex());
             }
         });
+        imgWebCamCapturedImage.setOnMouseMoved(event -> {
+            if(grabbedImage != null) {
+                try {
+                    int x = (int) (event.getX() / xScale);
+                    int y = (int) (event.getY() / yScale);
+                    int rgb = grabbedImage.getRGB(x, y);
+                    List<Double> res = NeuralNetworkListener.pixelConvert(rgb);
+                    log.setText(Math.round(res.get(0) * 10) / 10.0 + "\n" +
+                            Math.round(res.get(1) * 10) / 10.0 + "\n" +
+                            Math.round(res.get(2) * 10) / 10.0);
+                } catch (Exception ignored) {}
+            }
+        });
         Platform.runLater(this::setImageViewSize);
     }
 
@@ -126,6 +142,8 @@ public class WebCamController implements Initializable {
             slider.setVisible(false);
         }
         if(state == WebCamState.TRAIN) {
+            xScale = imgWebCamCapturedImage.getFitWidth()/SettingsListener.get().getWebCamQualityTrain().getFirst();
+            yScale = imgWebCamCapturedImage.getFitHeight()/SettingsListener.get().getWebCamQualityTrain().getSecond();
             cbCameraOptions.setDisable(true);
             start.setVisible(true);
             start.setDisable(false);
@@ -133,22 +151,13 @@ public class WebCamController implements Initializable {
             object.setDisable(false);
             for (String obj : NeuralNetworkListener.get().getObjects()) {
                 object.getItems().add(obj);
-                objectByColor.put(convertStringToColor(obj), obj);
-            }
-            if(isSeveral) {
-                start.setText("Обучить");
-                btnStopCamera.setText("Сделать кадр");
-                cbCameraOptions.setDisable(false);
-                object.setDisable(true);
             }
         }
         else {
+            xScale = imgWebCamCapturedImage.getFitWidth()/SettingsListener.get().getWebCamQualityQuery().getFirst();
+            yScale = imgWebCamCapturedImage.getFitHeight()/SettingsListener.get().getWebCamQualityQuery().getSecond();
             queueLabel.setVisible(false);
             header.setText("");
-        }
-        if(isSeveral) {
-            header.setText("");
-            header.setVisible(false);
         }
     }
 
@@ -176,10 +185,8 @@ public class WebCamController implements Initializable {
 
     protected void initializeWebCam(final int webCamIndex) {
         Task<Void> webCamInitializer = new Task<>() {
-
             @Override
             protected Void call() {
-
                 if (selWebCam != null) {
                     closeCamera();
                 }
@@ -188,7 +195,6 @@ public class WebCamController implements Initializable {
                 startWebCamStream();
                 return null;
             }
-
         };
         new Thread(webCamInitializer).start();
         fpBottomPane.setDisable(false);
@@ -199,11 +205,6 @@ public class WebCamController implements Initializable {
     public void choiceObject() {
         if(object.getValue() != null) {
             cbCameraOptions.setDisable(false);
-            if (isSeveral) {
-                addRectangle(grabbedImage.getWidth() / 2, grabbedImage.getHeight() / 2,
-                        90, 90, object.getValue().toString());
-                object.setValue(null);
-            }
         }
     }
 
@@ -214,18 +215,30 @@ public class WebCamController implements Initializable {
             NeuralNetworkListener.setQueueCount(0);
             return;
         }
-        if(isSeveral) {
-            startCamera();
+        int min = Integer.MAX_VALUE;
+        Map<String, List<List<List<Double>>>> temp = new HashMap<>();
+        for(Pair<List<List<Double>>, String> pair : trainingData) {
+            if(!temp.containsKey(pair.getSecond())) {
+                temp.put(pair.getSecond(), new ArrayList<>(List.of(pair.getFirst())));
+            }
+            else temp.get(pair.getSecond()).add(pair.getFirst());
         }
-        List<Pair<List<List<Double>>, String>> copyTrainingData = new ArrayList<>(trainingData);
-        Collections.shuffle(copyTrainingData);
-        for(Pair<List<List<Double>>, String> row : copyTrainingData) {
-            NeuralNetworkListener.threadTrain(row.getFirst(), row.getSecond());
+        for(String key : temp.keySet()) {
+            min = Math.min(min, temp.get(key).size());
+        }
+        for(int i = 0; i < min; ++i) {
+            for(String key : temp.keySet()) {
+                List<List<Double>> row = temp.get(key).get(i);
+                NeuralNetworkListener.threadTrain(row, key);
+            }
         }
         trainingData.clear();
     }
 
     public void train() {
+        grabbedImage = NeuralNetworkListener.resize(grabbedImage,
+                SettingsListener.get().getWebCamQualityTrain().getFirst(),
+                SettingsListener.get().getWebCamQualityTrain().getSecond());
         List<List<Double>> input = NeuralNetworkListener.parseImage(grabbedImage,
                 NeuralNetworkListener.get().getInputLayer(0).getSize());
         trainingData.add(new Pair<>(input, object.getValue().toString()));
@@ -237,18 +250,27 @@ public class WebCamController implements Initializable {
         for(Node node : bpWebCamPaneHolder.getChildren()) {
             if(node instanceof javafx.scene.shape.Rectangle rect) {
                 BufferedImage buffered = NeuralNetworkListener.cropImage(grabbedImage, (int)rect.getLayoutX(), (int)rect.getLayoutY(),
-                        (int)rect.getWidth(), (int)rect.getHeight());
+                        (int)(rect.getWidth()), (int)(rect.getHeight()));
                 List<List<Double>> input = NeuralNetworkListener.parseImage(buffered, NeuralNetworkListener.get().getInputLayer(0).getSize());
-                if(objectByColor.containsKey((javafx.scene.paint.Color) rect.getStroke())) {
-                    trainingData.add(new Pair<>(input, objectByColor.get((javafx.scene.paint.Color) rect.getStroke())));
+                if(objectByRectangle.containsKey(rect)) {
+                    trainingData.add(new Pair<>(input, objectByRectangle.get(rect)));
+                    File file = new File(rect.hashCode()+".png");
+                    try {
+                        ImageIO.write(buffered, "png", file);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-                NeuralNetworkListener.increaseQueueCount();
-                queueLabel.setText("В очереди: " + NeuralNetworkListener.getQueueCount());
             }
         }
+        NeuralNetworkListener.setQueueCount(0);
+        queueLabel.setText("В очереди: " + NeuralNetworkListener.getQueueCount());
     }
 
     public void query() {
+        grabbedImage = NeuralNetworkListener.resize(grabbedImage,
+                SettingsListener.get().getWebCamQualityQuery().getFirst(),
+                SettingsListener.get().getWebCamQualityQuery().getSecond());
         List<List<Double>> input = NeuralNetworkListener.parseImage(grabbedImage,
                 NeuralNetworkListener.get().getInputLayer(0).getSize());
         NeuralNetworkListener.threadQuery(input);
@@ -281,9 +303,16 @@ public class WebCamController implements Initializable {
         rectangle.setFill(javafx.scene.paint.Color.TRANSPARENT);
         rectangle.setStroke(convertStringToColor(object));
         rectangle.setOnMousePressed(event -> {
-            lastPoint.setFirst(rectangle.getLayoutX() - event.getSceneX());
-            lastPoint.setSecond(rectangle.getLayoutY() - event.getSceneY());
-            rectangle.setCursor(Cursor.MOVE);
+            if(event.getButton() == MouseButton.SECONDARY) {
+                bpWebCamPaneHolder.getChildren().remove(rectangle);
+                NeuralNetworkListener.decreaseQueueCount();
+                objectByRectangle.remove(rectangle);
+            }
+            else {
+                lastPoint.setFirst(rectangle.getLayoutX() - event.getSceneX());
+                lastPoint.setSecond(rectangle.getLayoutY() - event.getSceneY());
+                rectangle.setCursor(Cursor.MOVE);
+            }
         });
         rectangle.setOnMouseReleased(event -> {
             rectangle.setCursor(Cursor.HAND);
@@ -298,14 +327,15 @@ public class WebCamController implements Initializable {
         rectangle.setOnScroll(event -> {
             double zoomFactor = 1.05;
             double deltaY = event.getDeltaY();
-            if (deltaY < 0){
+            if (deltaY < 0) {
                 zoomFactor = 2.0 - zoomFactor;
             }
-            rectangle.setScaleX(rectangle.getScaleX() * zoomFactor);
-            rectangle.setScaleY(rectangle.getScaleY() * zoomFactor);
+            rectangle.setWidth(rectangle.getWidth()*zoomFactor);
+            rectangle.setHeight(rectangle.getHeight()*zoomFactor);
             event.consume();
         });
         bpWebCamPaneHolder.getChildren().add(rectangle);
+        objectByRectangle.put(rectangle, object);
     }
 
     protected void startWebCamStream() {
@@ -318,25 +348,19 @@ public class WebCamController implements Initializable {
                 while (!stopTask) {
                     try {
                         if ((grabbedImage = selWebCam.getImage()) != null) {
-                            if(!stopCamera) {
+                            if (!stopCamera) {
                                 BufferedImage finalPredImage = predImage;
                                 Platform.runLater(() -> {
                                     if (finalPredImage != null && grabbedImage != null) {
-                                        if(SettingsListener.get().isOnlyMoving()) grabbedImage = convert(finalPredImage, grabbedImage);
+                                        if (SettingsListener.get().isOnlyMoving())
+                                            grabbedImage = convert(finalPredImage, grabbedImage);
                                         if (state == WebCamState.TRAIN) {
-                                            if(!isSeveral) {
-                                                train();
-                                            }
+                                            train();
                                         } else if (state == WebCamState.QUERY) {
-                                            if(isSeveral) {
-                                                querySeveral();
-                                            }
-                                            else {
-                                                query();
-                                            }
+                                            query();
                                         }
                                     }
-                                    if(grabbedImage != null) {
+                                    if (grabbedImage != null) {
                                         Image img = SwingFXUtils
                                                 .toFXImage(grabbedImage, null);
                                         imageProperty.set(img);
@@ -345,7 +369,7 @@ public class WebCamController implements Initializable {
                                 predImage = grabbedImage;
                                 grabbedImage.flush();
                             }
-                            else if(state == WebCamState.TRAIN) {
+                            else if (state == WebCamState.TRAIN) {
                                 Platform.runLater(() -> {
                                     queueLabel.setText("В очереди: " + NeuralNetworkListener.getQueueCount());
                                 });
@@ -390,13 +414,6 @@ public class WebCamController implements Initializable {
         }
     }
 
-    public static BufferedImage deepCopy(BufferedImage bi) {
-        ColorModel cm = bi.getColorModel();
-        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
-        WritableRaster raster = bi.copyData(null);
-        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
-    }
-
     public BufferedImage convert(BufferedImage pred, BufferedImage cur) {
         int val = (int) slider.getValue();
         BufferedImage res = new BufferedImage(pred.getWidth(), pred.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -426,12 +443,6 @@ public class WebCamController implements Initializable {
     }
 
     public void stopCamera() {
-        if(state == WebCamState.TRAIN) {
-            if (btnStopCamera.getText().equals("Сделать кадр")) {
-                object.setDisable(false);
-                trainSeveral();
-            }
-        }
         stopCamera = true;
         btnStartCamera.setDisable(false);
         btnStopCamera.setDisable(true);

@@ -39,10 +39,12 @@
       <Label layoutX="720.0" layoutY="528.0" text="x" />
       <Label layoutX="524.0" layoutY="506.0" text="При обучении" />
       <Label layoutX="667.0" layoutY="506.0" text="При распознавании" />
-      <CheckBox fx:id="severalObjects" layoutX="33.0" layoutY="188.0" mnemonicParsing="false" onAction="#detectColorsAction" prefHeight="20.0" prefWidth="286.0" text="Распознавание нескольких объектов">
+      <CheckBox fx:id="severalObjects" disable="true" layoutX="33.0" layoutY="191.0" mnemonicParsing="false" onAction="#detectColorsAction" prefHeight="20.0" prefWidth="286.0" text="Распознавание нескольких объектов">
          <cursor>
             <Cursor fx:constant="HAND" />
          </cursor>
       </CheckBox>
+      <TextField fx:id="separation" alignment="CENTER_RIGHT" layoutX="172.0" layoutY="223.0" prefHeight="26.0" prefWidth="42.0" promptText="0.7" />
+      <Label layoutX="34.0" layoutY="227.0" prefHeight="18.0" prefWidth="138.0" text="Цветовой разделитель:" />
    </children>
 </AnchorPane>

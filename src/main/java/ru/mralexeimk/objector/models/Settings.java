@@ -19,6 +19,8 @@ public class Settings implements Serializable {
     private double lr;
     private boolean severalObjects;
     private int exampleSelected;
+    private double separate;
+
 
     public Settings() {
         loadFromFile();
@@ -37,29 +39,66 @@ public class Settings implements Serializable {
         this.detectColors = settings.detectColors;
         this.severalObjects = settings.severalObjects;
         this.lr = settings.lr;
+        this.separate = settings.separate;
     }
 
     public void toDefault() {
         rewriteWeights = false;
         onlyMoving = false;
-        detectColors = false;
+        detectColors = true;
         severalObjects = false;
-        webCamQualityTrain = new Pair<>(160, 90);
-        webCamQualityQuery = new Pair<>(160, 90);
-        lr = 0.1;
+        webCamQualityTrain = new Pair<>(320, 180);
+        webCamQualityQuery = new Pair<>(320, 180);
+        lr = 0.05;
+        separate = 0.7;
         exampleSelected = 1;
         toDefaultConfiguration();
     }
 
-    public void chooseConv(boolean isColored) {
-        if(!isColored) {
+    public void chooseAdvanced() {
+        if(!detectColors) {
+            configuration = new ArrayList<>(Arrays.asList(
+                    List.of(new InputLayer(1, 52, 0, LayerType.INPUT)),
+                    List.of(new FilterLayer(8, 44, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(8, 22, 0, LayerType.PULLING)),
+                    List.of(new FilterLayer(16, 16, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 8, 0, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(1024, 1, LayerType.NEURONS)),
+                    List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
+            ));
+        }
+        else {
+            configuration = new ArrayList<>(Arrays.asList(
+                    List.of(new InputLayer(1, 60, 0, LayerType.INPUT),
+                            new InputLayer(1, 60, 1, LayerType.INPUT),
+                            new InputLayer(1, 60, 2, LayerType.INPUT)),
+                    List.of(new FilterLayer(8, 40, 0, LayerType.FILTER),
+                            new FilterLayer(8, 40, 1, LayerType.FILTER),
+                            new FilterLayer(8, 40, 2, LayerType.FILTER)),
+                    List.of(new PullingLayer(8, 20, 0, LayerType.PULLING),
+                            new PullingLayer(8, 20, 1, LayerType.PULLING),
+                            new PullingLayer(8, 20, 2, LayerType.PULLING)),
+                    List.of(new FilterLayer(16, 12, 0, LayerType.FILTER),
+                            new FilterLayer(16, 12, 1, LayerType.FILTER),
+                            new FilterLayer(16, 12, 2, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 6, 0, LayerType.PULLING),
+                            new PullingLayer(16, 6, 1, LayerType.PULLING),
+                            new PullingLayer(16, 6, 2, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(576, 1, LayerType.NEURONS)),
+                    List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
+            ));
+        }
+    }
+
+    public void chooseConv() {
+        if(!detectColors) {
             configuration = new ArrayList<>(Arrays.asList(
                     List.of(new InputLayer(1, 28, 0, LayerType.INPUT)),
                     List.of(new FilterLayer(8, 24, 0, LayerType.FILTER)),
                     List.of(new PullingLayer(8, 12, 0, LayerType.PULLING)),
-                    List.of(new FilterLayer(32, 8, 0, LayerType.FILTER)),
-                    List.of(new PullingLayer(32, 4, 0, LayerType.PULLING)),
-                    List.of(new NeuronsLayer(512, 1, LayerType.NEURONS)),
+                    List.of(new FilterLayer(16, 8, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 4, 0, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(256, 1, LayerType.NEURONS)),
                     List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
             ));
         }
@@ -74,20 +113,20 @@ public class Settings implements Serializable {
                     List.of(new PullingLayer(8, 12, 0, LayerType.PULLING),
                             new PullingLayer(8, 12, 1, LayerType.PULLING),
                             new PullingLayer(8, 12, 2, LayerType.PULLING)),
-                    List.of(new FilterLayer(32, 8, 0, LayerType.FILTER),
-                            new FilterLayer(32, 8, 1, LayerType.FILTER),
-                            new FilterLayer(32, 8, 2, LayerType.FILTER)),
-                    List.of(new PullingLayer(32, 4, 0, LayerType.PULLING),
-                            new PullingLayer(32, 4, 1, LayerType.PULLING),
-                            new PullingLayer(32, 4, 2, LayerType.PULLING)),
-                    List.of(new NeuronsLayer(1536, 1, LayerType.NEURONS)),
+                    List.of(new FilterLayer(16, 8, 0, LayerType.FILTER),
+                            new FilterLayer(16, 8, 1, LayerType.FILTER),
+                            new FilterLayer(16, 8, 2, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 4, 0, LayerType.PULLING),
+                            new PullingLayer(16, 4, 1, LayerType.PULLING),
+                            new PullingLayer(16, 4, 2, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(768, 1, LayerType.NEURONS)),
                     List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
             ));
         }
     }
 
-    public void chooseDefault(boolean isColored) {
-        if(!isColored) {
+    public void chooseDefault() {
+        if(!detectColors) {
             configuration = new ArrayList<>(Arrays.asList(
                     List.of(new InputLayer(1, 28, 0, LayerType.INPUT)),
                     List.of(new NeuronsLayer(200, 1, LayerType.NEURONS)),
@@ -107,46 +146,46 @@ public class Settings implements Serializable {
         setExampleSelected(index);
         switch (index) {
             case 0:
-                chooseConv(false);
-                webCamQualityTrain = new Pair<>(160, 90);
-                webCamQualityQuery = new Pair<>(160, 90);
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = false;
                 severalObjects = false;
+                chooseConv();
                 break;
             case 1:
-                chooseConv(true);
-                webCamQualityTrain = new Pair<>(160, 90);
-                webCamQualityQuery = new Pair<>(160, 90);
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = true;
                 severalObjects = false;
+                chooseConv();
                 break;
             case 2:
-                chooseDefault(false);
-                webCamQualityTrain = new Pair<>(160, 90);
-                webCamQualityQuery = new Pair<>(160, 90);
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = false;
                 severalObjects = false;
+                chooseDefault();
                 break;
             case 3:
-                chooseDefault(true);
-                webCamQualityTrain = new Pair<>(160, 90);
-                webCamQualityQuery = new Pair<>(160, 90);
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = true;
                 severalObjects = false;
+                chooseDefault();
                 break;
             case 4:
-                chooseConv(false);
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = false;
-                severalObjects = true;
+                severalObjects = false;
+                chooseAdvanced();
                 break;
             case 5:
-                chooseConv(true);
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = true;
-                severalObjects = true;
+                severalObjects = false;
+                chooseAdvanced();
                 break;
         }
     }

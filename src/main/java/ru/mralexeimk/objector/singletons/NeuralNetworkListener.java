@@ -50,6 +50,10 @@ public class NeuralNetworkListener {
         queueCount++;
     }
 
+    public static void decreaseQueueCount() {
+        queueCount--;
+    }
+
     public static void save() {
         get().saveWeights(get().getId());
     }
@@ -82,14 +86,12 @@ public class NeuralNetworkListener {
         Graphics2D g2d = dimg.createGraphics();
         g2d.drawImage(tmp, 0, 0, null);
         g2d.dispose();
-
         return dimg;
     }
 
     public static double colorConvert(double a) {
-        if(a <= 0.4) return 0.01;
-        else if(a <= 0.7) return 0.5;
-        else return 0.99;
+        if(a <= SettingsListener.get().getSeparate()) return 0.01;
+        return 0.99;
     }
 
     public static List<Rectangle> querySeveralObjects(BufferedImage im, int perLen) {
@@ -133,6 +135,16 @@ public class NeuralNetworkListener {
                 isFinished = true;
             }).start();
         }
+    }
+
+    public static List<Double> pixelConvert(int rgb) {
+        int red = 255 - (rgb >> 16) & 0xFF;
+        int green = 255 - (rgb >> 8) & 0xFF;
+        int blue = 255 - rgb & 0xFF;
+        double r = colorConvert((red/255.0)*0.99 + 0.01);
+        double g = colorConvert((green/255.0)*0.99 + 0.01);
+        double b = colorConvert((blue/255.0)*0.99 + 0.01);
+        return new ArrayList<>(List.of(r, g, b));
     }
 
     public static List<List<Double>> extractData(BufferedImage im, int xStart, int yStart, int perLen) {

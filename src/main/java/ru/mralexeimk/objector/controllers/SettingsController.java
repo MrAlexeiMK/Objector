@@ -19,7 +19,7 @@ public class SettingsController {
     @FXML
     private TextArea configuration;
     @FXML
-    private TextField trainHeight, trainWeight, queryHeight, queryWeight, lr;
+    private TextField trainHeight, trainWeight, queryHeight, queryWeight, lr, separation;
     @FXML
     private ChoiceBox configs;
 
@@ -42,6 +42,7 @@ public class SettingsController {
         configs.getItems().addAll(configObjects);
         configs.setValue(configs.getItems().get(0));
         isOpen = true;
+        separation.setText(String.valueOf(SettingsListener.get().getSeparate()));
         rewrite.setSelected(SettingsListener.get().isRewriteWeights());
         onlyMoving.setSelected(SettingsListener.get().isOnlyMoving());
         configs.setValue(configObjects.get(SettingsListener.get().getExampleSelected()));
@@ -97,6 +98,7 @@ public class SettingsController {
                     Integer.parseInt(queryHeight.getText())));
             SettingsListener.get().setWebCamQualityTrain(new Pair<>(Integer.parseInt(trainWeight.getText()),
                     Integer.parseInt(trainHeight.getText())));
+            SettingsListener.get().setSeparate(Double.parseDouble(separation.getText()));
             SettingsListener.save();
         } catch (Exception ignored) {}
         Stage stage = (Stage) rewrite.getScene().getWindow();
