@@ -65,6 +65,23 @@ public class Matrix implements Serializable {
         }
     }
 
+    public Matrix(String pattern) {
+        String[] arr = pattern.split("\\|");
+        M = arr.length;
+        N = arr[0].split(",").length;
+        data = new ArrayList<>();
+        for(int i = 0; i < arr.length; ++i) {
+            String[] nums = arr[i].split(",");
+            List<Double> res = new ArrayList<>();
+            for(int j = 0; j < nums.length; ++j) {
+                double num = Double.parseDouble(nums[j]);
+                res.add(num);
+            }
+            data.add(res);
+        }
+        List<List<Double>> temp = new ArrayList<>();
+    }
+
     public List<Double> toList() {
         List<Double> res = new ArrayList<>();
         for(int y = 0; y < getM(); ++y) {
@@ -270,33 +287,43 @@ public class Matrix implements Serializable {
         return res;
     }
 
+    public void removeLastRow() {
+        --M;
+        data.remove(M);
+    }
+
+    public void removeLastColumn() {
+        --N;
+        for(int i = 0; i < data.size(); ++i) {
+            data.get(i).remove(N);
+        }
+    }
+
     public List<Pair<Integer, Integer>> getSquare(int K, int index) {
         List<Pair<Integer, Integer>> coords = new ArrayList<>();
-        if(N%K == 0 && M%K == 0) {
-            int nextN = N/K;
-            int x = (index%nextN) * K;
-            int y = (index/nextN) * K;
-            for(int x1 = x; x1 < x + K; ++x1) {
-                for(int y1 = y; y1 < y + K; ++y1) {
-                    coords.add(new Pair<>(x1, y1));
-                }
+        while(M%K != 0) removeLastRow();
+        while(M%K != 0) removeLastColumn();
+        int nextN = N/K;
+        int x = (index%nextN) * K;
+        int y = (index/nextN) * K;
+        for(int x1 = x; x1 < x + K; ++x1) {
+            for(int y1 = y; y1 < y + K; ++y1) {
+                coords.add(new Pair<>(x1, y1));
             }
         }
-        else throw new IndexOutOfBoundsException("N%K != 0 or M%K != 0");
         return coords;
     }
 
     public void sumIntoSquare(int K, int index, double error) {
-        if(N%K == 0 && M%K == 0) {
-            int x = (index%N) * K;
-            int y = (index/N) * K;
-            for(int x1 = x; x1 < x + K; ++x1) {
-                for(int y1 = y; y1 < y + K; ++y1) {
-                    set(x1, y1, get(x1, y1) + error);
-                }
+        while(M%K != 0) removeLastRow();
+        while(M%K != 0) removeLastColumn();
+        int x = (index%N) * K;
+        int y = (index/N) * K;
+        for(int x1 = x; x1 < x + K; ++x1) {
+            for(int y1 = y; y1 < y + K; ++y1) {
+                set(x1, y1, get(x1, y1) + error);
             }
         }
-        else throw new IndexOutOfBoundsException("N%K != 0 or M%K != 0");
     }
 
     public double getAverage() {

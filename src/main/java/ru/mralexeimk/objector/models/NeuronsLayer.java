@@ -1,6 +1,7 @@
 package ru.mralexeimk.objector.models;
 
 import ru.mralexeimk.objector.other.LayerType;
+import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ public class NeuronsLayer extends Layer implements Serializable {
 
     @Override
     public void evaluate() {
-        List<Double> res = evaluateByDefault(data, W);
+        List<Double> res = NeuralNetworkListener.evaluateByDefault(data, W);
         if(getNextLayer() instanceof NeuronsLayer nl) {
             nl.setData(res);
         }

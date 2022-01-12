@@ -20,7 +20,9 @@ public class Settings implements Serializable {
     private boolean severalObjects;
     private int exampleSelected;
     private double separate;
-
+    private boolean isSeparated;
+    private boolean isDefaultKernels;
+    private boolean trainKernels;
 
     public Settings() {
         loadFromFile();
@@ -40,6 +42,9 @@ public class Settings implements Serializable {
         this.severalObjects = settings.severalObjects;
         this.lr = settings.lr;
         this.separate = settings.separate;
+        this.isSeparated = settings.isSeparated;
+        this.isDefaultKernels = settings.isDefaultKernels;
+        this.trainKernels = settings.trainKernels;
     }
 
     public void toDefault() {
@@ -49,21 +54,55 @@ public class Settings implements Serializable {
         severalObjects = false;
         webCamQualityTrain = new Pair<>(320, 180);
         webCamQualityQuery = new Pair<>(320, 180);
+        isSeparated = true;
+        isDefaultKernels = true;
+        trainKernels = true;
         lr = 0.05;
         separate = 0.7;
         exampleSelected = 1;
         toDefaultConfiguration();
     }
 
+    public void chooseDetermined() {
+        if(!detectColors) {
+            configuration = new ArrayList<>(Arrays.asList(
+                    List.of(new InputLayer(1, 38, 0, LayerType.INPUT)),
+                    List.of(new FilterLayer(8, 36, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(8, 18, 0, LayerType.PULLING)),
+                    List.of(new FilterLayer(32, 16, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(32, 8, 0, LayerType.PULLING)),
+                    List.of(new FilterLayer(64, 6, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(64, 3, 0, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(576, 1, LayerType.NEURONS)),
+                    List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
+            ));
+        }
+        else {
+            configuration = new ArrayList<>(Arrays.asList(
+                    List.of(new InputLayer(1, 38, 0, LayerType.INPUT),
+                            new InputLayer(1, 38, 1, LayerType.INPUT),
+                            new InputLayer(1, 38, 2, LayerType.INPUT)),
+                    List.of(new FilterLayer(8, 36, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(8, 18, 0, LayerType.PULLING)),
+                    List.of(new FilterLayer(32, 16, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(32, 8, 0, LayerType.PULLING)),
+                    List.of(new FilterLayer(64, 6, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(64, 3, 0, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(576, 1, LayerType.NEURONS)),
+                    List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
+            ));
+        }
+    }
+
     public void chooseAdvanced() {
         if(!detectColors) {
             configuration = new ArrayList<>(Arrays.asList(
-                    List.of(new InputLayer(1, 52, 0, LayerType.INPUT)),
-                    List.of(new FilterLayer(8, 44, 0, LayerType.FILTER)),
-                    List.of(new PullingLayer(8, 22, 0, LayerType.PULLING)),
-                    List.of(new FilterLayer(16, 16, 0, LayerType.FILTER)),
-                    List.of(new PullingLayer(16, 8, 0, LayerType.PULLING)),
-                    List.of(new NeuronsLayer(1024, 1, LayerType.NEURONS)),
+                    List.of(new InputLayer(1, 60, 0, LayerType.INPUT)),
+                    List.of(new FilterLayer(8, 40, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(8, 20, 0, LayerType.PULLING)),
+                    List.of(new FilterLayer(16, 12, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 6, 0, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(576, 1, LayerType.NEURONS)),
                     List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
             ));
         }
@@ -72,18 +111,10 @@ public class Settings implements Serializable {
                     List.of(new InputLayer(1, 60, 0, LayerType.INPUT),
                             new InputLayer(1, 60, 1, LayerType.INPUT),
                             new InputLayer(1, 60, 2, LayerType.INPUT)),
-                    List.of(new FilterLayer(8, 40, 0, LayerType.FILTER),
-                            new FilterLayer(8, 40, 1, LayerType.FILTER),
-                            new FilterLayer(8, 40, 2, LayerType.FILTER)),
-                    List.of(new PullingLayer(8, 20, 0, LayerType.PULLING),
-                            new PullingLayer(8, 20, 1, LayerType.PULLING),
-                            new PullingLayer(8, 20, 2, LayerType.PULLING)),
-                    List.of(new FilterLayer(16, 12, 0, LayerType.FILTER),
-                            new FilterLayer(16, 12, 1, LayerType.FILTER),
-                            new FilterLayer(16, 12, 2, LayerType.FILTER)),
-                    List.of(new PullingLayer(16, 6, 0, LayerType.PULLING),
-                            new PullingLayer(16, 6, 1, LayerType.PULLING),
-                            new PullingLayer(16, 6, 2, LayerType.PULLING)),
+                    List.of(new FilterLayer(8, 40, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(8, 20, 0, LayerType.PULLING)),
+                    List.of(new FilterLayer(16, 12, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 6, 0, LayerType.PULLING)),
                     List.of(new NeuronsLayer(576, 1, LayerType.NEURONS)),
                     List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
             ));
@@ -107,19 +138,11 @@ public class Settings implements Serializable {
                     List.of(new InputLayer(1, 28, 0, LayerType.INPUT),
                             new InputLayer(1, 28, 1, LayerType.INPUT),
                             new InputLayer(1, 28, 2, LayerType.INPUT)),
-                    List.of(new FilterLayer(8, 24, 0, LayerType.FILTER),
-                            new FilterLayer(8, 24, 1, LayerType.FILTER),
-                            new FilterLayer(8, 24, 2, LayerType.FILTER)),
-                    List.of(new PullingLayer(8, 12, 0, LayerType.PULLING),
-                            new PullingLayer(8, 12, 1, LayerType.PULLING),
-                            new PullingLayer(8, 12, 2, LayerType.PULLING)),
-                    List.of(new FilterLayer(16, 8, 0, LayerType.FILTER),
-                            new FilterLayer(16, 8, 1, LayerType.FILTER),
-                            new FilterLayer(16, 8, 2, LayerType.FILTER)),
-                    List.of(new PullingLayer(16, 4, 0, LayerType.PULLING),
-                            new PullingLayer(16, 4, 1, LayerType.PULLING),
-                            new PullingLayer(16, 4, 2, LayerType.PULLING)),
-                    List.of(new NeuronsLayer(768, 1, LayerType.NEURONS)),
+                    List.of(new FilterLayer(8, 24, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(8, 12, 0, LayerType.PULLING)),
+                    List.of(new FilterLayer(16, 8, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 4, 0, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(256, 1, LayerType.NEURONS)),
                     List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
             ));
         }
@@ -145,48 +168,70 @@ public class Settings implements Serializable {
     public void selectConfiguration(int index) {
         setExampleSelected(index);
         switch (index) {
-            case 0:
+            case 0 -> {
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = false;
                 severalObjects = false;
+                trainKernels = true;
                 chooseConv();
-                break;
-            case 1:
+            }
+            case 1 -> {
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = true;
                 severalObjects = false;
+                trainKernels = true;
                 chooseConv();
-                break;
-            case 2:
+            }
+            case 2 -> {
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = false;
                 severalObjects = false;
+                trainKernels = true;
                 chooseDefault();
-                break;
-            case 3:
+            }
+            case 3 -> {
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = true;
                 severalObjects = false;
+                trainKernels = true;
                 chooseDefault();
-                break;
-            case 4:
+            }
+            case 4 -> {
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = false;
                 severalObjects = false;
+                trainKernels = true;
                 chooseAdvanced();
-                break;
-            case 5:
+            }
+            case 5 -> {
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = true;
                 severalObjects = false;
+                trainKernels = true;
                 chooseAdvanced();
-                break;
+            }
+            case 6 -> {
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
+                detectColors = false;
+                severalObjects = false;
+                trainKernels = false;
+                chooseDetermined();
+            }
+            case 7 -> {
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
+                detectColors = true;
+                severalObjects = false;
+                trainKernels = false;
+                chooseDetermined();
+            }
         }
     }
 

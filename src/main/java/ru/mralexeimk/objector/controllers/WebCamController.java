@@ -83,10 +83,12 @@ public class WebCamController implements Initializable {
     private Pair<Double, Double> lastPoint;
     private Map<javafx.scene.shape.Rectangle, String> objectByRectangle;
     private double xScale, yScale;
+    private int extraData;
 
     @Override
     public void initialize(URL arg0, ResourceBundle arg1) {
         isOpen = true;
+        extraData = 0;
         lastPoint = new Pair<>(0.0, 0.0);
         objectByRectangle = new HashMap<>();
         btnStartCamera.setDisable(true);
@@ -209,30 +211,34 @@ public class WebCamController implements Initializable {
     }
 
     public void startTrain() {
-        error.setText("");
-        if(trainingData == null || trainingData.isEmpty()) {
-            error.setText("Нет данных для обучения");
-            NeuralNetworkListener.setQueueCount(0);
-            return;
-        }
-        int min = Integer.MAX_VALUE;
-        Map<String, List<List<List<Double>>>> temp = new HashMap<>();
-        for(Pair<List<List<Double>>, String> pair : trainingData) {
-            if(!temp.containsKey(pair.getSecond())) {
-                temp.put(pair.getSecond(), new ArrayList<>(List.of(pair.getFirst())));
+        if(!start.isDisabled()) {
+            error.setText("");
+            if (trainingData == null || trainingData.isEmpty()) {
+                error.setText("Нет данных для обучения");
+                NeuralNetworkListener.setQueueCount(0);
+                return;
             }
-            else temp.get(pair.getSecond()).add(pair.getFirst());
-        }
-        for(String key : temp.keySet()) {
-            min = Math.min(min, temp.get(key).size());
-        }
-        for(int i = 0; i < min; ++i) {
-            for(String key : temp.keySet()) {
-                List<List<Double>> row = temp.get(key).get(i);
-                NeuralNetworkListener.threadTrain(row, key);
+            start.setDisable(true);
+            start.setVisible(false);
+            int min = Integer.MAX_VALUE;
+            Map<String, List<List<List<Double>>>> temp = new HashMap<>();
+            for (Pair<List<List<Double>>, String> pair : trainingData) {
+                if (!temp.containsKey(pair.getSecond())) {
+                    temp.put(pair.getSecond(), new ArrayList<>(List.of(pair.getFirst())));
+                } else temp.get(pair.getSecond()).add(pair.getFirst());
             }
+            for (String key : temp.keySet()) {
+                min = Math.min(min, temp.get(key).size());
+            }
+            extraData = trainingData.size()-min*temp.keySet().size();
+            for (int i = 0; i < min; ++i) {
+                for (String key : temp.keySet()) {
+                    List<List<Double>> row = temp.get(key).get(i);
+                    NeuralNetworkListener.threadTrain(row, key);
+                }
+            }
+            trainingData.clear();
         }
-        trainingData.clear();
     }
 
     public void train() {
@@ -372,6 +378,7 @@ public class WebCamController implements Initializable {
                             else if (state == WebCamState.TRAIN) {
                                 Platform.runLater(() -> {
                                     queueLabel.setText("В очереди: " + NeuralNetworkListener.getQueueCount());
+                                    if(!start.isVisible() && NeuralNetworkListener.getQueueCount() == extraData) close();
                                 });
                             }
                         }

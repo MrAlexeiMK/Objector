@@ -3,6 +3,7 @@ package ru.mralexeimk.objector.models;
 import lombok.Data;
 import ru.mralexeimk.objector.other.LayerType;
 import ru.mralexeimk.objector.other.Pair;
+import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 import ru.mralexeimk.objector.singletons.SettingsListener;
 
 import java.io.*;
@@ -219,10 +220,10 @@ public class NeuralNetwork implements Serializable {
         Matrix outputs = new Matrix(getOutputLayer().getData());
         Matrix targets = new Matrix(target_list);
         Matrix errors = targets.minus(outputs);
-        List<Double> changedErrors = new ArrayList<>();
+        List<Double> temp = new ArrayList<>();
         for(int i = layers.size()-2; i >= 0; --i) {
             int len = layers.get(i).size();
-            for(int j = 0; j < len; ++j) {
+            for (int j = 0; j < len; ++j) {
                 Layer layer = layers.get(i).get(j);
                 Layer nextLayer = layer.getNextLayer();
                 if (layer instanceof NeuronsLayer nl) {
@@ -243,10 +244,10 @@ public class NeuralNetwork implements Serializable {
                         errors = nl.getW().getTranspose().multiply(errors);
                     }
                 } else if (layer instanceof PullingLayer pl) {
+                    if(!SettingsListener.get().isTrainKernels()) continue;
                     if (nextLayer instanceof FilterLayer fl) {
                         int connections = fl.getUnits() / pl.getUnits();
-                        Matrix currentErrors = new Matrix(errors, j*(errors.getM()/len), errors.getM()/len);
-                        int lenErrorsPerConnect = currentErrors.getM() / (pl.getUnits() * connections);
+                        int lenErrorsPerConnect = errors.getM() / (pl.getUnits() * connections);
                         for (int unit = 0; unit < pl.getUnits(); ++unit) {
                             double average = 0;
                             Matrix I = pl.getData().get(unit);
@@ -256,7 +257,7 @@ public class NeuralNetwork implements Serializable {
                                 Matrix K = pl.getWW(unit, kernel);
                                 List<Double> errorList = new ArrayList<>();
                                 for (int e = val * lenErrorsPerConnect; e < lenErrorsPerConnect + val * lenErrorsPerConnect; ++e) {
-                                    errorList.add(currentErrors.get(0, e));
+                                    errorList.add(errors.get(0, e));
                                 }
                                 for (int e = 0; e < errorList.size(); ++e) {
                                     double error = errorList.get(e);
@@ -276,23 +277,23 @@ public class NeuralNetwork implements Serializable {
                                 pl.setWW(unit, kernel, K);
                             }
                             average /= (connections * lenErrorsPerConnect);
-                            changedErrors.add(average);
+                            temp.add(average);
                         }
-                        if(j == len-1) {
-                            errors = new Matrix(changedErrors);
-                            changedErrors.clear();
-                        }
+                        errors = new Matrix(temp);
+                        temp.clear();
                     }
                 } else if (layer instanceof InputLayer il) {
                     Matrix IVector = new Matrix(il.getData().toList());
                     Matrix I = il.getData();
-                    Matrix currentErrors = new Matrix(errors, j*(errors.getM()/len), errors.getM()/len);
                     if (nextLayer instanceof FilterLayer fl) {
+                        if(!SettingsListener.get().isTrainKernels()) continue;
                         int connections = fl.getUnits();
                         for (int kernel = 0; kernel < connections; ++kernel) {
-                            Matrix O = fl.getData().get(kernel);
+                            Matrix O = new Matrix(I);
                             Matrix K = il.getW().get(kernel);
-                            double error = currentErrors.get(0, kernel);
+                            O.convertByKernel(K);
+                            O = NeuralNetworkListener.activationFun(O);
+                            double error = errors.get(0, kernel);
                             for (int y = 0; y < O.getM(); ++y) {
                                 for (int x = 0; x < O.getN(); ++x) {
                                     double outputValue = O.get(x, y);
@@ -310,7 +311,7 @@ public class NeuralNetwork implements Serializable {
                         }
                     } else if (nextLayer instanceof NeuronsLayer nl) {
                         Matrix O = new Matrix(nl.getData());
-                        Matrix dif = currentErrors
+                        Matrix dif = errors
                                 .multiply(O)
                                 .multiply(O.getNegative().sum(1))
                                 .multiply(IVector.getTranspose())

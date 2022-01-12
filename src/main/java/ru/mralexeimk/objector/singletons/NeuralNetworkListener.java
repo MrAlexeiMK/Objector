@@ -1,6 +1,7 @@
 package ru.mralexeimk.objector.singletons;
 
 import lombok.Data;
+import ru.mralexeimk.objector.models.Matrix;
 import ru.mralexeimk.objector.models.NeuralNetwork;
 import ru.mralexeimk.objector.other.Pair;
 import ru.mralexeimk.objector.other.Rectangle;
@@ -20,6 +21,17 @@ public class NeuralNetworkListener {
     private static List<Rectangle> rectangles;
     private static boolean isFinished;
     private static List<List<List<Pair<String, Double>>>> cells;
+    private static List<Matrix> kernels = new ArrayList<>(List.of(
+            new Matrix("0.0625,0.125,0.0625|0.125,0.25,0.125|0.0625,0.125,0.0625"),
+            new Matrix("-1,-2,-1|0,0,0|1,2,1"),
+            new Matrix("-2,-1,0|-1,1,1|0,1,2"),
+            new Matrix("0,0,0|0,1,0|0,0,0"),
+            new Matrix("1,0,-1|2,0,-2|1,0,-1"),
+            new Matrix("-1,-1,-1|-1,8,-1|-1,-1,-1"),
+            new Matrix("-1,0,1|-2,0,2|-1,0,1"),
+            new Matrix("0,-1,0|-1,5,-1|0,-1,0"),
+            new Matrix("1,2,1|0,0,0|-1,-2,-1")
+    ));
 
     public static void init(String id) {
         queueCount = 0;
@@ -28,6 +40,83 @@ public class NeuralNetworkListener {
         queryRes = new Pair<>("Nothing", 0.99);
         rectangles = new ArrayList<>();
         neuralNetwork = new NeuralNetwork(id);
+    }
+
+    public static Matrix getDefaultKernel(int index) {
+        return kernels.get(index%getDefaultKernelsSize());
+    }
+
+    public static int getDefaultKernelsSize() {
+        return kernels.size();
+    }
+
+    public static double activationFunSig(double x) {
+        return 1.0/(1 + Math.exp(-x));
+    }
+
+    public static double activationFunSoftPlus(double x) {
+        return Math.min(Math.log(1 + Math.exp(x)), 0.99);
+    }
+
+    public static double activationFunReLU(double x) {
+        return Math.max(0.01, x);
+    }
+
+    public static double activationFunTanh(double x) {
+        return (Math.exp(x) - Math.exp(-x))/(Math.exp(x) + Math.exp(-x));
+    }
+
+    public static Matrix activationFun(Matrix m) {
+        Matrix res = new Matrix(m.getN(), m.getM());
+        for(int x = 0; x < m.getN(); ++x) {
+            for(int y = 0; y < m.getM(); ++y) {
+                res.set(x, y, activationFunSig(m.get(x, y)));
+            }
+        }
+        return res;
+    }
+
+    public static List<Double> evaluateByDefault(List<Double> data, Matrix W) {
+        return evaluateByDefault(new Matrix(data), W);
+    }
+
+    public static List<Double> evaluateByDefault(Matrix data, Matrix W) {
+        Matrix outputs = new Matrix(data.toList());
+        outputs = activationFun(W.multiply(outputs));
+        List<Double> res = new ArrayList<>();
+        for(int y = 0; y < outputs.getM(); ++y) {
+            for(int x = 0; x < outputs.getN(); ++x) {
+                res.add(outputs.get(x, y));
+            }
+        }
+        return res;
+    }
+
+    public static List<Matrix> evaluateByKernel(Matrix A, List<Matrix> kernels) {
+        List<Matrix> res = new ArrayList<>();
+        for (Matrix K : kernels) {
+            Matrix B = new Matrix(A);
+            B.convertByKernel(K);
+            B = activationFun(B);
+            res.add(B);
+        }
+        return res;
+    }
+
+    public static Matrix evaluateByPulling(Matrix A, int K) {
+        Matrix B = new Matrix(A);
+        B.resize(K);
+        return B;
+    }
+
+    public static List<Matrix> evaluateByPulling(List<Matrix> A, int K) {
+        List<Matrix> res = new ArrayList<>();
+        for(Matrix m : A) {
+            Matrix B = new Matrix(m);
+            B.resize(K);
+            res.add(B);
+        }
+        return res;
     }
 
     public static void setQueueCount(int count) {
@@ -90,6 +179,7 @@ public class NeuralNetworkListener {
     }
 
     public static double colorConvert(double a) {
+        if(!SettingsListener.get().isSeparated()) return a;
         if(a <= SettingsListener.get().getSeparate()) return 0.01;
         return 0.99;
     }

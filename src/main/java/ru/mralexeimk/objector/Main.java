@@ -2,6 +2,7 @@ package ru.mralexeimk.objector;
 
 import ru.mralexeimk.objector.models.*;
 import ru.mralexeimk.objector.other.LayerType;
+import ru.mralexeimk.objector.singletons.SettingsListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,11 +12,11 @@ public class Main {
     //MNIST test
     private static List<List<Layer>> layers = new ArrayList<>(Arrays.asList(
             List.of(new InputLayer(1, 28, 0, LayerType.INPUT)),
-            List.of(new FilterLayer(8, 24, 0, LayerType.FILTER)),
-            List.of(new PullingLayer(8, 12, 0, LayerType.PULLING)),
-            List.of(new FilterLayer(16, 8, 0, LayerType.FILTER)),
-            List.of(new PullingLayer(16, 4, 0, LayerType.PULLING)),
-            List.of(new NeuronsLayer(256, 1, LayerType.NEURONS)),
+            List.of(new FilterLayer(8, 26, 0, LayerType.FILTER)),
+            List.of(new PullingLayer(8, 13, 0, LayerType.PULLING)),
+            List.of(new FilterLayer(16, 11, 0, LayerType.FILTER)),
+            List.of(new PullingLayer(16, 5, 0, LayerType.PULLING)),
+            List.of(new NeuronsLayer(400, 1, LayerType.NEURONS)),
             List.of(new OutputLayer(10, 1, LayerType.OUTPUT))
     ));
 
@@ -26,18 +27,19 @@ public class Main {
     ));
 
     public static void main(String[] args) {
-        MainApplication.main(args);
+        //SettingsListener.init();
         //mnistTest();
+        MainApplication.main(args);
     }
 
     public static void mnistTest() {
         NeuralNetwork nn = new NeuralNetwork(layers, 0.1);
         nn.printData();
         nn.printWeights();
-        for(int i = 0; i < 10; ++i) nn.trainFromFile("/train/mnist_train_100.csv");
+        for(int i = 0; i < 100; ++i) nn.trainFromFile("/train/mnist_train_100.csv");
         nn.printData();
         nn.printWeights();
-        nn.testFromFile("/test/mnist_test_10.csv");
+        nn.testFromFile("/train/mnist_train_100.csv");
         nn.saveWeights("mnist");
     }
 }

@@ -1,6 +1,8 @@
 package ru.mralexeimk.objector.models;
 
 import ru.mralexeimk.objector.other.LayerType;
+import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
+import ru.mralexeimk.objector.singletons.SettingsListener;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -49,13 +51,18 @@ public class InputLayer extends Layer implements Serializable {
         if(next instanceof FilterLayer) {
             int kernel = getSize()-next.getSize()+1;
             for(int i = 0; i < getNextLayer().getUnits(); ++i) {
-                W.add(new Matrix(kernel, kernel, -1/Math.sqrt(next.getSize()*next.getSize()),
-                        1/Math.sqrt(next.getSize()*next.getSize())));
+                if (SettingsListener.get().isDefaultKernels() && kernel == 3) {
+                    W.add(NeuralNetworkListener.getDefaultKernel(i));
+                }
+                else {
+                    W.add(new Matrix(kernel, kernel, -1 / Math.sqrt(next.getSize() * next.getSize()),
+                            1 / Math.sqrt(next.getSize() * next.getSize())));
+                }
             }
         }
         else if(next instanceof NeuronsLayer) {
-            W.add(new Matrix(getSize()*getSize(), getNextLayer().getUnits(),
-                    -1/Math.sqrt(getNextLayer().getUnits()), 1/Math.sqrt(getNextLayer().getUnits())));
+            W.add(new Matrix(getSize() * getSize(), getNextLayer().getUnits(),
+                        -1 / Math.sqrt(getNextLayer().getUnits()), 1 / Math.sqrt(getNextLayer().getUnits())));
         }
     }
 
@@ -63,13 +70,13 @@ public class InputLayer extends Layer implements Serializable {
     public void evaluate() {
         Layer next = getNextLayer();
         if(next instanceof NeuronsLayer nl) {
-            nl.setData(evaluateByDefault(data, W.get(0)));
+            nl.setData(NeuralNetworkListener.evaluateByDefault(data, W.get(0)));
         }
         else if(next instanceof FilterLayer fl) {
-            fl.setData(evaluateByKernel(data, W));
+            fl.addData(NeuralNetworkListener.evaluateByKernel(data, W), getIndex());
         }
         else if(next instanceof PullingLayer pl) {
-            pl.setData(evaluateByPulling(new ArrayList<>(List.of(data)), getSize()/pl.getSize()));
+            pl.setData(NeuralNetworkListener.evaluateByPulling(new ArrayList<>(List.of(data)), getSize()/pl.getSize()));
         }
     }
 }

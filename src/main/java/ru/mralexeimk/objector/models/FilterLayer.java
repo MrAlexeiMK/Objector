@@ -1,6 +1,7 @@
 package ru.mralexeimk.objector.models;
 
 import ru.mralexeimk.objector.other.LayerType;
+import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -24,6 +25,17 @@ public class FilterLayer extends Layer implements Serializable {
         this.data = data;
     }
 
+    public void addData(List<Matrix> data, int index) {
+        if(index == 0) {
+            setData(data);
+        }
+        else {
+            for(int i = 0; i < data.size(); ++i) {
+                this.data.get(i).sum(data.get(i));
+            }
+        }
+    }
+
     public int getK() {
         return K;
     }
@@ -37,7 +49,7 @@ public class FilterLayer extends Layer implements Serializable {
     public void evaluate() {
         Layer next = getNextLayer();
         if(next instanceof PullingLayer pl) {
-            pl.setData(evaluateByPulling(data, K));
+            pl.setData(NeuralNetworkListener.evaluateByPulling(data, K));
         }
     }
 }

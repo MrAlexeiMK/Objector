@@ -1,6 +1,8 @@
 package ru.mralexeimk.objector.models;
 
 import ru.mralexeimk.objector.other.LayerType;
+import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
+import ru.mralexeimk.objector.singletons.SettingsListener;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -45,8 +47,13 @@ public class PullingLayer extends Layer implements Serializable {
             for(int i = 0; i < getUnits(); ++i) {
                 List<Matrix> res = new ArrayList<>();
                 for (int j = 0; j < val; ++j) {
-                    res.add(new Matrix(kernel, kernel, -1/Math.sqrt(next.getSize()*next.getSize()),
-                            1/Math.sqrt(next.getSize()*next.getSize())));
+                    if(SettingsListener.get().isDefaultKernels() && kernel == 3) {
+                        res.add(NeuralNetworkListener.getDefaultKernel(i*getUnits()+j));
+                    }
+                    else {
+                        res.add(new Matrix(kernel, kernel, -1 / Math.sqrt(next.getSize() * next.getSize()),
+                                1 / Math.sqrt(next.getSize() * next.getSize())));
+                    }
                 }
                 W.add(res);
             }
@@ -79,7 +86,7 @@ public class PullingLayer extends Layer implements Serializable {
         else if(next instanceof FilterLayer fl) {
             List<Matrix> res = new ArrayList<>();
             for(int i = 0; i < getUnits(); ++i) {
-                res.addAll(evaluateByKernel(data.get(i), W.get(i)));
+                res.addAll(NeuralNetworkListener.evaluateByKernel(data.get(i), W.get(i)));
             }
             fl.setData(res);
         }

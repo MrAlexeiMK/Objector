@@ -28,7 +28,7 @@
       <Label layoutX="569.0" layoutY="480.0" text="Разрешение веб-камеры" />
       <TextField fx:id="lr" alignment="CENTER" layoutX="564.0" layoutY="432.0" promptText="0.1" />
       <Label layoutX="572.0" layoutY="405.0" text="Коэффициент обучения" />
-      <CheckBox fx:id="detectColors" layoutX="33.0" layoutY="156.0" mnemonicParsing="false" onAction="#detectColorsAction" prefHeight="20.0" prefWidth="286.0" text="Распознавание цветов (в 3 раза больше весов)">
+      <CheckBox fx:id="detectColors" layoutX="33.0" layoutY="156.0" mnemonicParsing="false" onAction="#detectColorsAction" prefHeight="20.0" prefWidth="286.0" text="Распознавание цветов">
          <cursor>
             <Cursor fx:constant="HAND" />
          </cursor></CheckBox>
@@ -44,7 +44,21 @@
             <Cursor fx:constant="HAND" />
          </cursor>
       </CheckBox>
-      <TextField fx:id="separation" alignment="CENTER_RIGHT" layoutX="172.0" layoutY="223.0" prefHeight="26.0" prefWidth="42.0" promptText="0.7" />
-      <Label layoutX="34.0" layoutY="227.0" prefHeight="18.0" prefWidth="138.0" text="Цветовой разделитель:" />
+      <TextField fx:id="separation" alignment="CENTER_RIGHT" layoutX="204.0" layoutY="223.0" prefHeight="26.0" prefWidth="42.0" promptText="0.7" />
+      <CheckBox fx:id="isSeparate" layoutX="34.0" layoutY="226.0" mnemonicParsing="false" onAction="#chooseSeparated" prefHeight="20.0" prefWidth="166.0" selected="true" text="Цветовой разделитель:">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor>
+      </CheckBox>
+      <CheckBox fx:id="defaultKernels" layoutX="34.0" layoutY="260.0" mnemonicParsing="false" prefHeight="20.0" prefWidth="371.0" selected="true" text="Инициализировать стандартными ядрами при возможности">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor>
+      </CheckBox>
+      <CheckBox fx:id="trainKernels" layoutX="34.0" layoutY="292.0" mnemonicParsing="false" prefHeight="20.0" prefWidth="117.0" selected="true" text="Обучать ядра">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor>
+      </CheckBox>
    </children>
 </AnchorPane>
