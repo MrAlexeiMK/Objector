@@ -59,7 +59,7 @@ public class Settings implements Serializable {
         trainKernels = true;
         lr = 0.05;
         separate = 0.7;
-        exampleSelected = 1;
+        exampleSelected = 7;
         toDefaultConfiguration();
     }
 
@@ -221,10 +221,26 @@ public class Settings implements Serializable {
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = false;
                 severalObjects = false;
-                trainKernels = false;
+                trainKernels = true;
                 chooseDetermined();
             }
             case 7 -> {
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
+                detectColors = true;
+                severalObjects = false;
+                trainKernels = true;
+                chooseDetermined();
+            }
+            case 8 -> {
+                webCamQualityTrain = new Pair<>(320, 180);
+                webCamQualityQuery = new Pair<>(320, 180);
+                detectColors = false;
+                severalObjects = false;
+                trainKernels = false;
+                chooseDetermined();
+            }
+            case 9 -> {
                 webCamQualityTrain = new Pair<>(320, 180);
                 webCamQualityQuery = new Pair<>(320, 180);
                 detectColors = true;
@@ -237,10 +253,10 @@ public class Settings implements Serializable {
 
     public void toDefaultConfiguration() {
         if(!detectColors) {
-            selectConfiguration(0);
+            selectConfiguration(6);
         }
         else {
-            selectConfiguration(1);
+            selectConfiguration(7);
         }
     }
 

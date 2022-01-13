@@ -5,6 +5,7 @@ import ru.mralexeimk.objector.singletons.NeuralNetworkListener;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class FilterLayer extends Layer implements Serializable {

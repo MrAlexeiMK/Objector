@@ -6,16 +6,23 @@ import ru.mralexeimk.objector.singletons.SettingsListener;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class InputLayer extends Layer implements Serializable {
     private Matrix data;
     private List<Matrix> W;
+    private List<Double> biases;
 
     public InputLayer(int units, int size, int index, LayerType layerType) {
         super(units, size, index, layerType);
         data = new Matrix(size, size);
+        biases = new ArrayList<>();
         W = new ArrayList<>();
+    }
+
+    public List<Double> getBiases() {
+        return biases;
     }
 
     public Matrix getData() {
@@ -47,6 +54,7 @@ public class InputLayer extends Layer implements Serializable {
     @Override
     public void toDefault() {
         W.clear();
+        biases.clear();
         Layer next = getNextLayer();
         if(next instanceof FilterLayer) {
             int kernel = getSize()-next.getSize()+1;
@@ -64,6 +72,7 @@ public class InputLayer extends Layer implements Serializable {
             W.add(new Matrix(getSize() * getSize(), getNextLayer().getUnits(),
                         -1 / Math.sqrt(getNextLayer().getUnits()), 1 / Math.sqrt(getNextLayer().getUnits())));
         }
+        biases = new ArrayList<>(Collections.nCopies(W.size(), 0.0));
     }
 
     @Override
@@ -73,7 +82,7 @@ public class InputLayer extends Layer implements Serializable {
             nl.setData(NeuralNetworkListener.evaluateByDefault(data, W.get(0)));
         }
         else if(next instanceof FilterLayer fl) {
-            fl.addData(NeuralNetworkListener.evaluateByKernel(data, W), getIndex());
+            fl.addData(NeuralNetworkListener.evaluateByKernel(data, W, biases), getIndex());
         }
         else if(next instanceof PullingLayer pl) {
             pl.setData(NeuralNetworkListener.evaluateByPulling(new ArrayList<>(List.of(data)), getSize()/pl.getSize()));

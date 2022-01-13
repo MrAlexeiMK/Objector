@@ -14,7 +14,7 @@ public class Main {
             List.of(new InputLayer(1, 28, 0, LayerType.INPUT)),
             List.of(new FilterLayer(8, 26, 0, LayerType.FILTER)),
             List.of(new PullingLayer(8, 13, 0, LayerType.PULLING)),
-            List.of(new FilterLayer(16, 11, 0, LayerType.FILTER)),
+            List.of(new FilterLayer(16, 10, 0, LayerType.FILTER)),
             List.of(new PullingLayer(16, 5, 0, LayerType.PULLING)),
             List.of(new NeuronsLayer(400, 1, LayerType.NEURONS)),
             List.of(new OutputLayer(10, 1, LayerType.OUTPUT))
@@ -22,7 +22,7 @@ public class Main {
 
     private static List<List<Layer>> layers2 = new ArrayList<>(Arrays.asList(
             List.of(new InputLayer(1, 28, 0, LayerType.INPUT)),
-            List.of(new NeuronsLayer(120, 1, LayerType.NEURONS)),
+            List.of(new NeuronsLayer(150, 1, LayerType.NEURONS)),
             List.of(new OutputLayer(10, 1, LayerType.OUTPUT))
     ));
 
@@ -31,15 +31,15 @@ public class Main {
         //mnistTest();
         MainApplication.main(args);
     }
-
+    //93.68%
     public static void mnistTest() {
-        NeuralNetwork nn = new NeuralNetwork(layers, 0.1);
+        NeuralNetwork nn = new NeuralNetwork(layers, 0.05);
         nn.printData();
         nn.printWeights();
-        for(int i = 0; i < 100; ++i) nn.trainFromFile("/train/mnist_train_100.csv");
+        for(int i = 0; i < 30; ++i) nn.trainFromFile("/train/mnist_train_100.csv");
         nn.printData();
         nn.printWeights();
-        nn.testFromFile("/train/mnist_train_100.csv");
+        nn.testFromFile("/test/mnist_test_10.csv");
         nn.saveWeights("mnist");
     }
 }

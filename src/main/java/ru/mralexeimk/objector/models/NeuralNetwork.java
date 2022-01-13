@@ -156,8 +156,10 @@ public class NeuralNetwork implements Serializable {
             Layer layer = layerList.get(0);
             System.out.println(layer.toString());
             if (layer instanceof InputLayer il) {
+                System.out.println(il.getBiases());
                 for (Matrix m : il.getW()) m.print();
             } else if (layer instanceof PullingLayer pl) {
+                System.out.println(pl.getBiases());
                 for (List<Matrix> mm : pl.getW()) {
                     for (Matrix m : mm) {
                         m.print();
@@ -253,20 +255,28 @@ public class NeuralNetwork implements Serializable {
                             Matrix I = pl.getData().get(unit);
                             for (int kernel = 0; kernel < connections; ++kernel) {
                                 int val = unit * connections + kernel;
+                                double bias = pl.getBiases().get(unit).get(kernel);
                                 Matrix O = fl.getData().get(val);
                                 Matrix K = pl.getWW(unit, kernel);
                                 List<Double> errorList = new ArrayList<>();
+                                double bias_error = 0, bias_input = 0, bias_output = 0;
+                                double bias_input_count = 0, bias_output_count = 0;
                                 for (int e = val * lenErrorsPerConnect; e < lenErrorsPerConnect + val * lenErrorsPerConnect; ++e) {
                                     errorList.add(errors.get(0, e));
                                 }
                                 for (int e = 0; e < errorList.size(); ++e) {
                                     double error = errorList.get(e);
                                     average += error;
+                                    bias_error += error;
                                     for (Pair<Integer, Integer> pair : O.getSquare(fl.getK(), e)) {
                                         double outputValue = O.get(pair.getFirst(), pair.getSecond());
+                                        bias_output += outputValue;
+                                        bias_output_count++;
                                         for (int y = pair.getSecond(); y < pair.getSecond() + K.getM(); ++y) {
                                             for (int x = pair.getFirst(); x < pair.getFirst() + K.getN(); ++x) {
                                                 double inputValue = I.get(x, y);
+                                                bias_input += inputValue;
+                                                bias_input_count++;
                                                 int kX = x - pair.getFirst();
                                                 int kY = y - pair.getSecond();
                                                 K.set(kX, kY, K.get(kX, kY) + lr * outputValue * (1 - outputValue) * inputValue * error);
@@ -274,6 +284,9 @@ public class NeuralNetwork implements Serializable {
                                         }
                                     }
                                 }
+                                bias_input /= bias_input_count;
+                                bias_output /= bias_output_count;
+                                pl.getBiases().get(unit).set(kernel, bias+lr*bias_output*(1-bias_output)*bias_input*bias_error);
                                 pl.setWW(unit, kernel, K);
                             }
                             average /= (connections * lenErrorsPerConnect);
@@ -291,15 +304,22 @@ public class NeuralNetwork implements Serializable {
                         for (int kernel = 0; kernel < connections; ++kernel) {
                             Matrix O = new Matrix(I);
                             Matrix K = il.getW().get(kernel);
+                            double bias = il.getBiases().get(kernel);
                             O.convertByKernel(K);
                             O = NeuralNetworkListener.activationFun(O);
                             double error = errors.get(0, kernel);
+                            double bias_input = 0, bias_output = 0;
+                            double bias_input_count = 0, bias_output_count = 0;
                             for (int y = 0; y < O.getM(); ++y) {
                                 for (int x = 0; x < O.getN(); ++x) {
                                     double outputValue = O.get(x, y);
+                                    bias_output += outputValue;
+                                    bias_output_count++;
                                     for (int y1 = y; y1 < y + K.getM(); ++y1) {
                                         for (int x1 = x; x1 < x + K.getN(); ++x1) {
                                             double inputValue = I.get(x1, y1);
+                                            bias_input += inputValue;
+                                            bias_input_count++;
                                             int kX = x1 - x;
                                             int kY = y1 - y;
                                             K.set(kX, kY, K.get(kX, kY) + lr * outputValue * (1 - outputValue) * inputValue * error);
@@ -307,6 +327,9 @@ public class NeuralNetwork implements Serializable {
                                     }
                                 }
                             }
+                            bias_input /= bias_input_count;
+                            bias_output /= bias_output_count;
+                            il.getBiases().set(kernel, bias + lr*bias_output*(1-bias_output)*bias_input*error);
                             il.setW(kernel, K);
                         }
                     } else if (nextLayer instanceof NeuronsLayer nl) {

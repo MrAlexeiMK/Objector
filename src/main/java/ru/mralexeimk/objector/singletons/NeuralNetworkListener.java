@@ -59,7 +59,8 @@ public class NeuralNetworkListener {
     }
 
     public static double activationFunReLU(double x) {
-        return Math.max(0.01, x);
+        if(x >= 0) return Math.min(x, 0.99);
+        return 0.001*x;
     }
 
     public static double activationFunTanh(double x) {
@@ -92,11 +93,13 @@ public class NeuralNetworkListener {
         return res;
     }
 
-    public static List<Matrix> evaluateByKernel(Matrix A, List<Matrix> kernels) {
+    public static List<Matrix> evaluateByKernel(Matrix A, List<Matrix> kernels, List<Double> biases) {
         List<Matrix> res = new ArrayList<>();
-        for (Matrix K : kernels) {
+        for (int i = 0; i < kernels.size(); ++i) {
+            Matrix K = kernels.get(i);
             Matrix B = new Matrix(A);
             B.convertByKernel(K);
+            B.sum(biases.get(i));
             B = activationFun(B);
             res.add(B);
         }
