@@ -15,7 +15,6 @@ public class NeuronsLayer extends Layer implements Serializable {
     public NeuronsLayer(int units, int size, LayerType layerType) {
         super(units, size, 0, layerType);
         data = new ArrayList<>();
-        W = new Matrix(1, 1);
     }
 
     public List<Double> getData() {
@@ -49,7 +48,7 @@ public class NeuronsLayer extends Layer implements Serializable {
     }
 
     @Override
-    public void addRow(){
+    public void addRow() {
         Matrix bottomRow = new Matrix(getUnits(), 1);
         W.joinBottom(bottomRow);
     }

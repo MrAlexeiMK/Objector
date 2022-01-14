@@ -84,8 +84,5 @@ public class InputLayer extends Layer implements Serializable {
         else if(next instanceof FilterLayer fl) {
             fl.addData(NeuralNetworkListener.evaluateByKernel(data, W, biases), getIndex());
         }
-        else if(next instanceof PullingLayer pl) {
-            pl.setData(NeuralNetworkListener.evaluateByPulling(new ArrayList<>(List.of(data)), getSize()/pl.getSize()));
-        }
     }
 }

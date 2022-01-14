@@ -44,7 +44,6 @@ public class SettingsController {
     public void initialize() {
         firstLoad = true;
         configs.getItems().addAll(configObjects);
-        configs.setValue(configs.getItems().get(0));
         isOpen = true;
         boolean temp = SettingsListener.get().isSeparated();
         isSeparate.setSelected(temp);
@@ -109,6 +108,7 @@ public class SettingsController {
             SettingsListener.get().setSeparated(isSeparate.isSelected());
             SettingsListener.get().setDefaultKernels(defaultKernels.isSelected());
             SettingsListener.get().setTrainKernels(trainKernels.isSelected());
+            SettingsListener.get().setExampleSelected(configObjects.indexOf(configs.getValue().toString()));
             if (!SettingsListener.get().setConfiguration(configuration.getText())) {
                 SettingsListener.get().toDefaultConfiguration();
             }

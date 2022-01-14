@@ -234,9 +234,9 @@ public class NeuralNetworkListener {
         int red = 255 - (rgb >> 16) & 0xFF;
         int green = 255 - (rgb >> 8) & 0xFF;
         int blue = 255 - rgb & 0xFF;
-        double r = colorConvert((red/255.0)*0.99 + 0.01);
-        double g = colorConvert((green/255.0)*0.99 + 0.01);
-        double b = colorConvert((blue/255.0)*0.99 + 0.01);
+        double r = colorConvert((red/255.0)*0.99 + 0.001);
+        double g = colorConvert((green/255.0)*0.99 + 0.001);
+        double b = colorConvert((blue/255.0)*0.99 + 0.001);
         return new ArrayList<>(List.of(r, g, b));
     }
 
@@ -252,16 +252,16 @@ public class NeuralNetworkListener {
                 int green = 255 - (rgb >> 8) & 0xFF;
                 int blue = 255 - rgb & 0xFF;
                 if(neuralNetwork.isSeveralInputs()) {
-                    double r = (red/255.0)*0.99 + 0.01;
-                    double g = (green/255.0)*0.99 + 0.01;
-                    double b = (blue/255.0)*0.99 + 0.01;
+                    double r = (red/255.0)*0.99 + 0.001;
+                    double g = (green/255.0)*0.99 + 0.001;
+                    double b = (blue/255.0)*0.99 + 0.001;
                     res.get(0).add(colorConvert(r));
                     res.get(1).add(colorConvert(g));
                     res.get(2).add(colorConvert(b));
                 }
                 else {
                     double mid = (red+green+blue)/3.0;
-                    mid = (mid/255.0)*0.99 + 0.01;
+                    mid = (mid/255.0)*0.99 + 0.001;
                     res.get(0).add(colorConvert(mid));
                 }
             }
