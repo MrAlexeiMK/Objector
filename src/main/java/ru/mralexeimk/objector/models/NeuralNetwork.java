@@ -339,7 +339,7 @@ public class NeuralNetwork implements Serializable {
                                 .multiply(O.getNegative().sum(1))
                                 .multiply(IVector.getTranspose())
                                 .multiply(lr);
-                        nl.setW(nl.getW().sum(dif));
+                        il.setW(j, il.getW().get(j).sum(dif));
                     }
                 }
             }

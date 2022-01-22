@@ -69,11 +69,9 @@ public class Settings implements Serializable {
                     List.of(new InputLayer(1, 38, 0, LayerType.INPUT)),
                     List.of(new FilterLayer(8, 36, 0, LayerType.FILTER)),
                     List.of(new PullingLayer(8, 18, 0, LayerType.PULLING)),
-                    List.of(new FilterLayer(32, 16, 0, LayerType.FILTER)),
-                    List.of(new PullingLayer(32, 8, 0, LayerType.PULLING)),
-                    List.of(new FilterLayer(64, 6, 0, LayerType.FILTER)),
-                    List.of(new PullingLayer(64, 3, 0, LayerType.PULLING)),
-                    List.of(new NeuronsLayer(576, 1, LayerType.NEURONS)),
+                    List.of(new FilterLayer(16, 16, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 8, 0, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(1024, 1, LayerType.NEURONS)),
                     List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
             ));
         }
@@ -84,11 +82,9 @@ public class Settings implements Serializable {
                             new InputLayer(1, 38, 2, LayerType.INPUT)),
                     List.of(new FilterLayer(8, 36, 0, LayerType.FILTER)),
                     List.of(new PullingLayer(8, 18, 0, LayerType.PULLING)),
-                    List.of(new FilterLayer(32, 16, 0, LayerType.FILTER)),
-                    List.of(new PullingLayer(32, 8, 0, LayerType.PULLING)),
-                    List.of(new FilterLayer(64, 6, 0, LayerType.FILTER)),
-                    List.of(new PullingLayer(64, 3, 0, LayerType.PULLING)),
-                    List.of(new NeuronsLayer(576, 1, LayerType.NEURONS)),
+                    List.of(new FilterLayer(16, 16, 0, LayerType.FILTER)),
+                    List.of(new PullingLayer(16, 8, 0, LayerType.PULLING)),
+                    List.of(new NeuronsLayer(1024, 1, LayerType.NEURONS)),
                     List.of(new OutputLayer(1, 1, LayerType.OUTPUT))
             ));
         }
