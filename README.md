@@ -3,7 +3,7 @@
  
  <b>Installation:</b> Just download Objector.jar and run  
  
- <b>Demonstration:</b>: <a href="https://www.youtube.com/watch?v=TjhdoBqIeis">link</a>  
+ <b>Demonstration:</b> <a href="https://www.youtube.com/watch?v=TjhdoBqIeis">link</a>  
  
 <b>Was used:</b>  
 https://arxiv.org/pdf/1511.08458.pdf  
