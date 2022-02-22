@@ -1,4 +1,7 @@
-# Objector
+# Objector  
+  
+  <b><a href="https://github.com/MrAlexeiMK/Objector/raw/main/Objector.jar">DOWNLOAD</a></b>  
+   
  JavaFX application to train/query convolutional neural network from webcam gui  
  
  <b>Installation:</b> Just download Objector.jar and run  
